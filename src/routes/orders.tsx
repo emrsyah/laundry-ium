@@ -4,7 +4,7 @@ import {
 	useQueryClient,
 	useSuspenseQuery,
 } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "framer-motion";
 import {
 	CheckCircle2,
@@ -20,7 +20,7 @@ import {
 	Trash2,
 	X,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { toast } from "sonner";
 import {
 	analyticsSummary,
@@ -52,9 +52,13 @@ import {
 	SelectValue,
 } from "../components/ui/select";
 import { Textarea } from "../components/ui/textarea";
+import { z } from "zod";
 
 export const Route = createFileRoute("/orders")({
 	component: OrdersPage,
+	validateSearch: z.object({
+		viewItem: z.number().optional().catch(undefined),
+	}),
 });
 
 export const analyticsSummaryQueryOptions = queryOptions({
@@ -144,6 +148,8 @@ type OrderItem = {
 };
 
 function OrdersPage() {
+	const searchParams = Route.useSearch();
+	const navigate = useNavigate({ from: "/orders" });
 	const queryClient = useQueryClient();
 	const { data: orders = [] } = useSuspenseQuery(ordersListQueryOptions);
 	const { data: customers = [] } = useSuspenseQuery(customersListQueryOptions);
@@ -188,6 +194,22 @@ function OrdersPage() {
 
 	const [orderDetail, setOrderDetail] = useState<{ items?: { id: number; serviceId?: number | null; serviceName: string; quantity: number; unitPrice: number; subtotal: number }[] } | null>(null);
 	const [loadingDetail, setLoadingDetail] = useState(false);
+
+	const lastViewedParamRef = useRef<number | null>(null);
+
+	useEffect(() => {
+		if (searchParams.viewItem && !selectedOrder && orders.length > 0) {
+			if (lastViewedParamRef.current !== searchParams.viewItem) {
+				const target = orders.find((o) => o.id === searchParams.viewItem);
+				if (target) {
+					lastViewedParamRef.current = searchParams.viewItem;
+					openOrderDetail(target);
+				}
+			}
+		} else if (!searchParams.viewItem) {
+			lastViewedParamRef.current = null;
+		}
+	}, [searchParams.viewItem, orders, selectedOrder]);
 
 	const createMutation = useMutation({
 		mutationFn: (data: {
@@ -617,18 +639,19 @@ function OrdersPage() {
 					if (!open) {
 						setSelectedOrder(null);
 						setOrderDetail(null);
+						navigate({ search: {}, replace: true });
 					}
 				}}
 			>
-				<DrawerContent className="max-h-[85vh]">
-					<div className="overflow-y-auto px-4 pb-4 w-full">
-						<DrawerHeader className="mb-2">
-							<DrawerTitle>Detail Pesanan</DrawerTitle>
-							<DrawerDescription>
-								Informasi lengkap pesanan laundry
-							</DrawerDescription>
-						</DrawerHeader>
+				<DrawerContent className="max-h-[85dvh] flex flex-col">
+					<DrawerHeader className="mb-2 shrink-0">
+						<DrawerTitle>Detail Pesanan</DrawerTitle>
+						<DrawerDescription>
+							Informasi lengkap pesanan laundry
+						</DrawerDescription>
+					</DrawerHeader>
 
+					<div className="overflow-y-auto px-4 pb-4 w-full shrink">
 						{selectedOrder && (
 							<div className="space-y-4 pb-4">
 								{/* Status Progress Bar */}
@@ -902,13 +925,13 @@ function OrdersPage() {
 					}
 				}}
 			>
-				<DrawerContent className="max-h-[85vh]">
-					<div className="overflow-y-auto px-4 pb-4 w-full">
-						<DrawerHeader className="mb-2">
-							<DrawerTitle>Pesanan Baru</DrawerTitle>
-							<DrawerDescription>Isi detail pesanan laundry</DrawerDescription>
-						</DrawerHeader>
+				<DrawerContent className="max-h-[85dvh] flex flex-col">
+					<DrawerHeader className="mb-2 shrink-0">
+						<DrawerTitle>Pesanan Baru</DrawerTitle>
+						<DrawerDescription>Isi detail pesanan laundry</DrawerDescription>
+					</DrawerHeader>
 
+					<div className="overflow-y-auto px-4 pb-4 w-full shrink">
 						<div className="space-y-4 pb-4">
 							{/* Customer Selection */}
 							<div className="space-y-2">
@@ -1189,15 +1212,15 @@ function OrdersPage() {
 					}
 				}}
 			>
-				<DrawerContent className="max-h-[85vh]">
-					<div className="overflow-y-auto px-4 pb-4 w-full">
-						<DrawerHeader className="mb-2">
-							<DrawerTitle>Edit Pesanan</DrawerTitle>
-							<DrawerDescription>
-								Perbarui detail pesanan laundry
-							</DrawerDescription>
-						</DrawerHeader>
+				<DrawerContent className="max-h-[85dvh] flex flex-col">
+					<DrawerHeader className="mb-2 shrink-0">
+						<DrawerTitle>Edit Pesanan</DrawerTitle>
+						<DrawerDescription>
+							Perbarui detail pesanan laundry
+						</DrawerDescription>
+					</DrawerHeader>
 
+					<div className="overflow-y-auto px-4 pb-4 w-full shrink">
 						<div className="space-y-4 pb-4">
 							{/* Edit Items */}
 							<div className="space-y-2">

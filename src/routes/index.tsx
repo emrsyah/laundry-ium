@@ -191,9 +191,11 @@ function BerandaPage() {
 						{recentOrders.map((order) => {
 							const statusCfg = STATUS_CONFIG[order.status];
 							return (
-								<div
+								<Link
+									to="/orders"
+									search={{ viewItem: order.id }}
 									key={order.id}
-									className="flex items-center gap-3 rounded-2xl border border-border bg-card p-3.5"
+									className="flex items-center gap-3 rounded-2xl border border-border bg-card p-3.5 no-underline transition-colors hover:border-primary/40"
 								>
 									<div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
 										{order.status === "SELESAI" ? (
@@ -220,7 +222,7 @@ function BerandaPage() {
 									>
 										{statusCfg?.label ?? order.status}
 									</span>
-								</div>
+								</Link>
 							);
 						})}
 					</div>

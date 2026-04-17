@@ -420,13 +420,17 @@ function CustomerDetailPage() {
 										key={order.id}
 										className="rounded-[1.5rem] border border-border bg-card p-4 transition-all hover:border-primary/30"
 									>
-										<div className="flex items-center gap-4">
-											<div className="h-12 w-12 rounded-xl bg-primary/5 border border-primary/10 flex items-center justify-center shrink-0 shadow-sm">
+										<Link
+											to="/orders"
+											search={{ viewItem: order.id }}
+											className="flex items-center gap-4 no-underline group"
+										>
+											<div className="h-12 w-12 rounded-xl bg-primary/5 border border-primary/10 flex items-center justify-center shrink-0 shadow-sm group-hover:bg-primary/10 transition-colors">
 												<ShoppingBag className="h-5 w-5 text-primary" />
 											</div>
 											<div className="flex-1 min-w-0">
 												<div className="flex items-center justify-between mb-0.5">
-													<p className="text-sm font-black text-foreground">
+													<p className="text-sm font-black text-foreground group-hover:text-primary transition-colors">
 														{formatRupiah(order.nominal)}
 													</p>
 													<span
@@ -454,7 +458,7 @@ function CustomerDetailPage() {
 													)}
 												</div>
 											</div>
-										</div>
+										</Link>
 
 										{/* Notes */}
 										{order.notes && (
@@ -511,12 +515,12 @@ function CustomerDetailPage() {
 				}}
 			>
 				<DrawerContent>
-					<div className="mx-auto w-full max-w-lg">
-						<DrawerHeader className="text-left px-4 pt-6">
+					<div className="mx-auto w-full max-w-lg flex flex-col max-h-[85dvh]">
+						<DrawerHeader className="text-left px-4 pt-6 shrink-0">
 							<DrawerTitle>Edit Pelanggan</DrawerTitle>
 							<DrawerDescription>Perbarui data pelanggan</DrawerDescription>
 						</DrawerHeader>
-						<div className="space-y-4 px-4 pb-8 pt-2">
+						<div className="space-y-4 px-4 pb-8 pt-2 overflow-y-auto shrink">
 							<div className="space-y-2">
 								<Label className="text-sm font-semibold text-foreground/80">
 									Nama Lengkap{" "}

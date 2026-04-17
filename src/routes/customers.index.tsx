@@ -353,8 +353,8 @@ function CustomersListPage() {
 				}}
 			>
 				<DrawerContent>
-					<div className="mx-auto w-full max-w-lg">
-						<DrawerHeader className="text-left px-4 pt-6">
+					<div className="mx-auto w-full max-w-lg flex flex-col max-h-[85dvh]">
+						<DrawerHeader className="text-left px-4 pt-6 shrink-0">
 							<DrawerTitle>
 								{formMode === "create" ? "Tambah Pelanggan" : "Edit Pelanggan"}
 							</DrawerTitle>
@@ -365,7 +365,7 @@ function CustomersListPage() {
 							</DrawerDescription>
 						</DrawerHeader>
 
-						<div className="space-y-4 px-4 pb-8 pt-2">
+						<div className="space-y-4 px-4 pb-8 pt-2 overflow-y-auto shrink">
 							<div className="space-y-2">
 								<Label
 									htmlFor="customer-name"
