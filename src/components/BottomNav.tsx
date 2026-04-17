@@ -1,5 +1,6 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import { BarChart3, ClipboardList, Home, Settings, Users } from "lucide-react";
+import { motion } from "framer-motion";
 
 const navItems = [
 	{ name: "Beranda", icon: Home, path: "/" },
@@ -26,26 +27,28 @@ export function BottomNav() {
 							key={item.path}
 							to={item.path}
 							className={[
-								"flex flex-col items-center justify-center flex-1 h-full gap-0.5 transition-colors",
+								"flex flex-col items-center justify-center flex-1 h-full transition-colors",
 								isActive
 									? "text-primary"
 									: "text-muted-foreground hover:text-foreground/80",
 							].join(" ")}
 						>
-							<div
-								className={[
-									"flex items-center justify-center rounded-xl transition-all",
-									isActive ? "h-9 w-9 bg-primary/10" : "h-9 w-9",
-								].join(" ")}
-							>
-								<item.icon
-									className="h-5 w-5"
-									strokeWidth={isActive ? 2.5 : 1.8}
-								/>
-							</div>
-							<span className="text-[11px] font-medium leading-none">
-								{item.name}
-							</span>
+							<motion.div whileTap={{ scale: 0.88 }} className="flex flex-col items-center justify-center h-full w-full gap-0.5">
+								<div
+									className={[
+										"flex items-center justify-center rounded-xl transition-all",
+										isActive ? "h-9 w-9 bg-primary/10" : "h-9 w-9",
+									].join(" ")}
+								>
+									<item.icon
+										className="h-5 w-5"
+										strokeWidth={isActive ? 2.5 : 1.8}
+									/>
+								</div>
+								<span className="text-[11px] font-medium leading-none">
+									{item.name}
+								</span>
+							</motion.div>
 						</Link>
 					);
 				})}

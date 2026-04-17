@@ -26,12 +26,13 @@ import {
 	SelectValue,
 } from "../components/ui/select";
 import {
-	Sheet,
-	SheetContent,
-	SheetDescription,
-	SheetHeader,
-	SheetTitle,
-} from "../components/ui/sheet";
+	Drawer,
+	DrawerContent,
+	DrawerDescription,
+	DrawerHeader,
+	DrawerTitle,
+} from "../components/ui/drawer";
+import { motion, AnimatePresence } from "framer-motion";
 import { useTRPC } from "../integrations/trpc/react";
 
 export const Route = createFileRoute("/orders")({
@@ -275,6 +276,7 @@ function OrdersPage() {
 
 			{/* Order List */}
 			<div className="space-y-2">
+				<AnimatePresence mode="popLayout">
 				{filtered.length === 0 ? (
 					<div className="rounded-2xl border border-border bg-card p-10 text-center">
 						<div className="h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
@@ -296,7 +298,12 @@ function OrdersPage() {
 						const statusCfg = STATUS_CONFIG[order.status as OrderStatus];
 						const StatusIcon = statusCfg?.icon ?? Clock;
 						return (
-							<button
+							<motion.button
+								layout
+								initial={{ opacity: 0, y: 10 }}
+								animate={{ opacity: 1, y: 0 }}
+								exit={{ opacity: 0, scale: 0.95 }}
+								whileTap={{ scale: 0.96 }}
 								key={order.id}
 								type="button"
 								className="flex items-center gap-3 rounded-2xl border border-border bg-card p-3.5 w-full text-left shadow-sm hover:border-primary/40 transition-colors"
@@ -340,27 +347,28 @@ function OrdersPage() {
 													</a>
 									)}
 								</div>
-							</button>
+							</motion.button>
 						);
 					})
 				)}
+				</AnimatePresence>
 			</div>
 
 			{/* Order Detail Sheet */}
-			<Sheet
+			<Drawer
 				open={!!selectedOrder}
 				onOpenChange={(open) => !open && setSelectedOrder(null)}
 			>
-				<SheetContent
-					side="bottom"
-					className="rounded-t-3xl max-h-[85vh] overflow-y-auto"
+				<DrawerContent
+					className="max-h-[85vh]"
 				>
-					<SheetHeader className="mb-2">
-						<SheetTitle>Detail Pesanan</SheetTitle>
-						<SheetDescription>
+					<div className="overflow-y-auto px-4 pb-4 w-full">
+					<DrawerHeader className="mb-2">
+						<DrawerTitle>Detail Pesanan</DrawerTitle>
+						<DrawerDescription>
 							Informasi lengkap pesanan laundry
-						</SheetDescription>
-					</SheetHeader>
+						</DrawerDescription>
+					</DrawerHeader>
 
 					{selectedOrder && (
 						<div className="space-y-4 pb-4">
@@ -491,11 +499,12 @@ function OrdersPage() {
 							</div>
 						</div>
 					)}
-				</SheetContent>
-			</Sheet>
+					</div>
+				</DrawerContent>
+			</Drawer>
 
 			{/* Create Order Sheet */}
-			<Sheet
+			<Drawer
 				open={showCreateForm}
 				onOpenChange={(open) => {
 					if (!open) {
@@ -504,14 +513,14 @@ function OrdersPage() {
 					}
 				}}
 			>
-				<SheetContent
-					side="bottom"
-					className="rounded-t-3xl max-h-[85vh] overflow-y-auto"
+				<DrawerContent
+					className="max-h-[85vh]"
 				>
-					<SheetHeader className="mb-2">
-						<SheetTitle>Pesanan Baru</SheetTitle>
-						<SheetDescription>Isi detail pesanan laundry</SheetDescription>
-					</SheetHeader>
+					<div className="overflow-y-auto px-4 pb-4 w-full">
+					<DrawerHeader className="mb-2">
+						<DrawerTitle>Pesanan Baru</DrawerTitle>
+						<DrawerDescription>Isi detail pesanan laundry</DrawerDescription>
+					</DrawerHeader>
 
 					<div className="space-y-4 pb-4">
 						{/* Customer Selection */}
@@ -694,8 +703,9 @@ function OrdersPage() {
 							)}
 						</Button>
 					</div>
-				</SheetContent>
-			</Sheet>
+					</div>
+				</DrawerContent>
+			</Drawer>
 		</div>
 	);
 }
