@@ -85,25 +85,29 @@ function AnalyticsPage() {
 						Pendapatan 7 Hari
 					</h2>
 				</div>
-				<div className="flex items-end gap-1.5 h-36">
+				<div className="flex items-end gap-1.5 h-44 pt-6">
 					{weekly.map((day, i) => {
 						const heightPct =
 							maxRevenue > 0 ? (day.revenue / maxRevenue) * 100 : 0;
 						return (
 							<div
 								key={day.label}
-								className="flex-1 flex flex-col items-center gap-1.5"
+								className="flex-1 flex flex-col items-center h-full"
 							>
-								{day.revenue > 0 && (
-									<span className="text-[10px] text-muted-foreground font-medium leading-none">
-										{formatRupiahCompact(day.revenue)}
-									</span>
-								)}
-								<div
-									className="w-full rounded-t-lg bg-primary transition-all duration-500 min-h-[4px]"
-									style={{ height: `${Math.max(heightPct, 3)}%` }}
-								/>
-								<span className="text-[11px] text-muted-foreground font-medium capitalize">
+								{/* Bar Container */}
+								<div className="flex-1 w-full flex flex-col justify-end items-center gap-1">
+									{day.revenue > 0 && (
+										<span className="text-[10px] text-muted-foreground font-bold whitespace-nowrap">
+											{formatRupiahCompact(day.revenue)}
+										</span>
+									)}
+									<div
+										className="w-full rounded-t-lg bg-primary transition-all duration-500 min-h-[4px]"
+										style={{ height: `${Math.max(heightPct, 4)}%` }}
+									/>
+								</div>
+								{/* X-Axis Label */}
+								<span className="text-[11px] text-muted-foreground font-medium capitalize mt-1.5">
 									{day.label}
 								</span>
 							</div>

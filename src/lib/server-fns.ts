@@ -7,7 +7,26 @@ import { customers, orders, storeSettings } from "#/db/schema";
 
 export const customersList = createServerFn({ method: "GET" }).handler(
 	async () => {
-		return await db.select().from(customers).orderBy(desc(customers.createdAt));
+		const res = await db
+			.select({
+				id: customers.id,
+				name: customers.name,
+				phone: customers.phone,
+				address: customers.address,
+				totalOrders: sql`count(${orders.id})`,
+				totalSpent: sql`coalesce(sum(${orders.nominal}), 0)`,
+				createdAt: customers.createdAt,
+			})
+			.from(customers)
+			.leftJoin(orders, eq(customers.id, orders.customerId))
+			.groupBy(customers.id)
+			.orderBy(desc(customers.createdAt));
+
+		return res.map((r) => ({
+			...r,
+			totalOrders: Number(r.totalOrders),
+			totalSpent: Number(r.totalSpent),
+		}));
 	},
 );
 
@@ -23,6 +42,39 @@ export const customersCreate = createServerFn({ method: "POST" })
 			})
 			.returning();
 		return created[0];
+	});
+
+export const customersGet = createServerFn({ method: "GET" })
+	.inputValidator((id: number) => id)
+	.handler(async ({ data: id }) => {
+		const customer = await db
+			.select()
+			.from(customers)
+			.where(eq(customers.id, id))
+			.limit(1);
+
+		if (customer.length === 0) return null;
+
+		const customerOrders = await db
+			.select()
+			.from(orders)
+			.where(eq(orders.customerId, id))
+			.orderBy(desc(orders.createdAt));
+
+		const stats = await db
+			.select({
+				totalOrders: sql`count(*)`,
+				totalSpent: sql`coalesce(sum(${orders.nominal}), 0)`,
+			})
+			.from(orders)
+			.where(eq(orders.customerId, id));
+
+		return {
+			...customer[0],
+			orders: customerOrders,
+			totalOrders: Number(stats[0]?.totalOrders ?? 0),
+			totalSpent: Number(stats[0]?.totalSpent ?? 0),
+		};
 	});
 
 // ── Orders ─────────────────────────────────────────────

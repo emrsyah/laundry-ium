@@ -74,7 +74,7 @@ export const storeSettings = pgTable("store_settings", {
   address: text("address"),
   waTemplate: text("wa_template").default("Halo {nama}, pesanan laundry Anda sudah SELESAI! Silakan diambil. Terimakasih 🙏"),
   autoWaEnabled: boolean("auto_wa_enabled").default(false),
-  paymentConfigs: jsonb("payment_configs").default(["TUNAI", "TRANSFER"]),
+  paymentConfigs: jsonb("payment_configs").$type<string[]>().default(["TUNAI", "TRANSFER"]),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
