@@ -1,4 +1,5 @@
 import {
+	queryOptions,
 	useMutation,
 	useQueryClient,
 	useSuspenseQuery,
@@ -27,47 +28,45 @@ import {
 	SheetTitle,
 } from "../components/ui/sheet";
 import { Textarea } from "../components/ui/textarea";
-import { useTRPC } from "../integrations/trpc/react";
+import {
+	customersList,
+	customersCreate,
+} from "#/lib/server-fns";
+import { formatRupiahCompact } from ".";
 
 export const Route = createFileRoute("/customers")({
 	component: CustomersPage,
 });
 
-function formatRupiahCompact(amount: number) {
-	return new Intl.NumberFormat("id-ID", {
-		style: "currency",
-		currency: "IDR",
-		maximumFractionDigits: 0,
-		notation: "compact",
-	}).format(amount);
-}
+
+export const customersListQueryOptions = queryOptions({
+	queryKey: ["customers", "list"],
+	queryFn: () => customersList(),
+});
 
 function CustomersPage() {
-	const trpc = useTRPC();
 	const queryClient = useQueryClient();
-	const { data: customers = [] } = useSuspenseQuery(
-		trpc.customers.list.queryOptions(),
-	);
+	const { data: customers = [] } = useSuspenseQuery(customersListQueryOptions);
 
 	const [search, setSearch] = useState("");
 	const [showForm, setShowForm] = useState(false);
 	const [form, setForm] = useState({ name: "", phone: "", address: "" });
 	const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
-	const createMutation = useMutation(
-		trpc.customers.create.mutationOptions({
-			onSuccess: (data) => {
-				queryClient.invalidateQueries(trpc.customers.list.queryOptions());
-				setShowForm(false);
-				setForm({ name: "", phone: "", address: "" });
-				setFormErrors({});
-				toast.success(`Pelanggan "${data.name}" berhasil ditambahkan`);
-			},
-			onError: () => {
-				toast.error("Gagal menambah pelanggan. Coba lagi.");
-			},
-		}),
-	);
+	const createMutation = useMutation({
+		mutationFn: (data: { name: string; phone: string; address?: string }) =>
+			customersCreate({ data }),
+		onSuccess: (data) => {
+			queryClient.invalidateQueries(customersListQueryOptions);
+			setShowForm(false);
+			setForm({ name: "", phone: "", address: "" });
+			setFormErrors({});
+			toast.success(`Pelanggan "${data.name}" berhasil ditambahkan`);
+		},
+		onError: () => {
+			toast.error("Gagal menambah pelanggan. Coba lagi.");
+		},
+	});
 
 	const filtered = customers.filter(
 		(c) =>

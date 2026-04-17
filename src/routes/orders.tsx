@@ -1,4 +1,5 @@
 import {
+	queryOptions,
 	useMutation,
 	useQueryClient,
 	useSuspenseQuery,
@@ -33,18 +34,41 @@ import {
 	DrawerTitle,
 } from "../components/ui/drawer";
 import { motion, AnimatePresence } from "framer-motion";
-import { useTRPC } from "../integrations/trpc/react";
+import {
+	customersList,
+	customersCreate,
+	ordersList,
+	ordersCreate,
+	ordersUpdateStatus,
+	analyticsSummary,
+} from "#/lib/server-fns";
 
 export const Route = createFileRoute("/orders")({
 	component: OrdersPage,
 });
 
+
+export const analyticsSummaryQueryOptions = queryOptions({
+	queryKey: ["analytics", "summary"],
+	queryFn: () => analyticsSummary(),
+});
+
+export const ordersListQueryOptions = queryOptions({
+	queryKey: ["orders", "list"],
+	queryFn: () => ordersList(),
+});
+
+export const customersListQueryOptions = queryOptions({
+	queryKey: ["customers", "list"],
+	queryFn: () => customersList(),
+});
+
+
 type OrderStatus = "PENDING" | "DIPROSES" | "SELESAI";
 
 const STATUS_CONFIG: Record<
 	OrderStatus,
-	{ label: string; icon: typeof Clock; className: string }
-> = {
+	{ label: string; icon: typeof Clock; className: string }> = {
 	PENDING: {
 		label: "Menunggu",
 		icon: Clock,
@@ -79,15 +103,11 @@ function formatDate(date: string | Date) {
 	});
 }
 
+
 function OrdersPage() {
-	const trpc = useTRPC();
 	const queryClient = useQueryClient();
-	const { data: orders = [] } = useSuspenseQuery(
-		trpc.orders.list.queryOptions(),
-	);
-	const { data: customers = [] } = useSuspenseQuery(
-		trpc.customers.list.queryOptions(),
-	);
+	const { data: orders = [] } = useSuspenseQuery(ordersListQueryOptions);
+	const { data: customers = [] } = useSuspenseQuery(customersListQueryOptions);
 
 	const [search, setSearch] = useState("");
 	const [filterStatus, setFilterStatus] = useState<OrderStatus | "ALL">("ALL");
@@ -108,54 +128,54 @@ function OrdersPage() {
 	const [newCustomer, setNewCustomer] = useState({ name: "", phone: "" });
 	const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
-	const createMutation = useMutation(
-		trpc.orders.create.mutationOptions({
-			onSuccess: () => {
-				queryClient.invalidateQueries(trpc.orders.list.queryOptions());
-				queryClient.invalidateQueries(trpc.analytics.summary.queryOptions());
-				setShowCreateForm(false);
-				setForm({ customerId: "", type: "kiloan", nominal: "" });
-				setNewCustomer({ name: "", phone: "" });
-				setCustomerMode("existing");
-				setFormErrors({});
-				toast.success("Pesanan berhasil dibuat!");
-			},
-			onError: () => {
-				toast.error("Gagal membuat pesanan. Coba lagi.");
-			},
-		}),
-	);
+	const createMutation = useMutation({
+		mutationFn: (data: { customerId: number; type: string; nominal: number }) =>
+			ordersCreate({ data }),
+		onSuccess: () => {
+			queryClient.invalidateQueries(ordersListQueryOptions);
+			queryClient.invalidateQueries(analyticsSummaryQueryOptions);
+			setShowCreateForm(false);
+			setForm({ customerId: "", type: "kiloan", nominal: "" });
+			setNewCustomer({ name: "", phone: "" });
+			setCustomerMode("existing");
+			setFormErrors({});
+			toast.success("Pesanan berhasil dibuat!");
+		},
+		onError: () => {
+			toast.error("Gagal membuat pesanan. Coba lagi.");
+		},
+	});
 
-	const createCustomerMutation = useMutation(
-		trpc.customers.create.mutationOptions({
-			onSuccess: (data) => {
-				queryClient.invalidateQueries(trpc.customers.list.queryOptions());
-				toast.success(`Pelanggan "${data.name}" berhasil ditambahkan`);
-				createMutation.mutate({
-					customerId: data.id,
-					type: form.type,
-					nominal: Number(form.nominal),
-				});
-			},
-			onError: () => {
-				toast.error("Gagal menambah pelanggan. Coba lagi.");
-			},
-		}),
-	);
+	const createCustomerMutation = useMutation({
+		mutationFn: (data: { name: string; phone: string; address?: string }) =>
+			customersCreate({ data }),
+		onSuccess: (data) => {
+			queryClient.invalidateQueries(customersListQueryOptions);
+			toast.success(`Pelanggan "${data.name}" berhasil ditambahkan`);
+			createMutation.mutate({
+				customerId: data.id,
+				type: form.type,
+				nominal: Number(form.nominal),
+			});
+		},
+		onError: () => {
+			toast.error("Gagal menambah pelanggan. Coba lagi.");
+		},
+	});
 
-	const updateStatusMutation = useMutation(
-		trpc.orders.updateStatus.mutationOptions({
-			onSuccess: () => {
-				queryClient.invalidateQueries(trpc.orders.list.queryOptions());
-				queryClient.invalidateQueries(trpc.analytics.summary.queryOptions());
-				setSelectedOrder(null);
-				toast.success("Status pesanan diperbarui");
-			},
-			onError: () => {
-				toast.error("Gagal memperbarui status. Coba lagi.");
-			},
-		}),
-	);
+	const updateStatusMutation = useMutation({
+		mutationFn: (data: { id: number; status: "PENDING" | "DIPROSES" | "SELESAI" }) =>
+			ordersUpdateStatus({ data }),
+		onSuccess: () => {
+			queryClient.invalidateQueries(ordersListQueryOptions);
+			queryClient.invalidateQueries(analyticsSummaryQueryOptions);
+			setSelectedOrder(null);
+			toast.success("Status pesanan diperbarui");
+		},
+		onError: () => {
+			toast.error("Gagal memperbarui status. Coba lagi.");
+		},
+	});
 
 	const filtered = orders.filter((o) => {
 		const matchSearch = o.customerName

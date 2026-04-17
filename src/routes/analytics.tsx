@@ -1,40 +1,37 @@
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { BarChart3, Shirt, ShoppingBag, TrendingUp } from "lucide-react";
-import { useTRPC } from "../integrations/trpc/react";
+import {
+	analyticsSummary,
+	analyticsWeeklyRevenue,
+	analyticsServiceBreakdown,
+} from "#/lib/server-fns";
+import { formatRupiahCompact } from ".";
 
 export const Route = createFileRoute("/analytics")({
 	component: AnalyticsPage,
 });
 
-function formatRupiahCompact(amount: number) {
-	return new Intl.NumberFormat("id-ID", {
-		style: "currency",
-		currency: "IDR",
-		maximumFractionDigits: 0,
-		notation: "compact",
-	}).format(amount);
-}
 
-function formatRupiah(amount: number) {
-	return new Intl.NumberFormat("id-ID", {
-		style: "currency",
-		currency: "IDR",
-		maximumFractionDigits: 0,
-	}).format(amount);
-}
+export const analyticsSummaryQueryOptions = queryOptions({
+	queryKey: ["analytics", "summary"],
+	queryFn: () => analyticsSummary(),
+});
+
+export const analyticsWeeklyRevenueQueryOptions = queryOptions({
+	queryKey: ["analytics", "weeklyRevenue"],
+	queryFn: () => analyticsWeeklyRevenue(),
+});
+
+export const analyticsServiceBreakdownQueryOptions = queryOptions({
+	queryKey: ["analytics", "serviceBreakdown"],
+	queryFn: () => analyticsServiceBreakdown(),
+});
 
 function AnalyticsPage() {
-	const trpc = useTRPC();
-	const { data: summary } = useSuspenseQuery(
-		trpc.analytics.summary.queryOptions(),
-	);
-	const { data: weekly = [] } = useSuspenseQuery(
-		trpc.analytics.weeklyRevenue.queryOptions(),
-	);
-	const { data: services = [] } = useSuspenseQuery(
-		trpc.analytics.serviceBreakdown.queryOptions(),
-	);
+	const { data: summary } = useSuspenseQuery(analyticsSummaryQueryOptions);
+	const { data: weekly = [] } = useSuspenseQuery(analyticsWeeklyRevenueQueryOptions);
+	const { data: services = [] } = useSuspenseQuery(analyticsServiceBreakdownQueryOptions);
 
 	const maxRevenue = Math.max(...weekly.map((d) => d.revenue), 1);
 	const totalRevenue = weekly.reduce((acc, d) => acc + d.revenue, 0);

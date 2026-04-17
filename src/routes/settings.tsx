@@ -1,4 +1,5 @@
 import {
+	queryOptions,
 	useMutation,
 	useQueryClient,
 	useSuspenseQuery,
@@ -18,16 +19,21 @@ import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Textarea } from "../components/ui/textarea";
-import { useTRPC } from "../integrations/trpc/react";
+import { settingsGet, settingsUpdate } from "#/lib/server-fns";
 
 export const Route = createFileRoute("/settings")({
 	component: SettingsPage,
 });
 
-function SettingsPage() {
-	const trpc = useTRPC();
+
+export const settingsGetQueryOptions = queryOptions({
+	queryKey: ["settings"],
+	queryFn: () => settingsGet(),
+});
+
+	function SettingsPage() {
 	const queryClient = useQueryClient();
-	const { data: settings } = useSuspenseQuery(trpc.settings.get.queryOptions());
+	const { data: settings } = useSuspenseQuery(settingsGetQueryOptions);
 
 	const [form, setForm] = useState({
 		name: "",
@@ -54,19 +60,24 @@ function SettingsPage() {
 		}
 	}, [settings]);
 
-	const updateMutation = useMutation(
-		trpc.settings.update.mutationOptions({
-			onSuccess: () => {
-				queryClient.invalidateQueries(trpc.settings.get.queryOptions());
-				setSaved(true);
-				toast.success("Pengaturan berhasil disimpan!");
-				setTimeout(() => setSaved(false), 2500);
-			},
-			onError: () => {
-				toast.error("Gagal menyimpan pengaturan. Coba lagi.");
-			},
-		}),
-	);
+	const updateMutation = useMutation({
+		mutationFn: (data: {
+			name?: string;
+			address?: string;
+			waTemplate?: string;
+			autoWaEnabled?: boolean;
+			paymentConfigs?: string[];
+		}) => settingsUpdate({ data }),
+		onSuccess: () => {
+			queryClient.invalidateQueries(settingsGetQueryOptions);
+			setSaved(true);
+			toast.success("Pengaturan berhasil disimpan!");
+			setTimeout(() => setSaved(false), 2500);
+		},
+		onError: () => {
+			toast.error("Gagal menyimpan pengaturan. Coba lagi.");
+		},
+	});
 
 	const paymentOptions = ["TUNAI", "TRANSFER", "QRIS", "OVO", "GOPAY", "DANA"];
 

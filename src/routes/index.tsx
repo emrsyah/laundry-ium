@@ -1,4 +1,4 @@
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
 	ChevronRight,
@@ -9,7 +9,10 @@ import {
 	UserPlus,
 	Wallet,
 } from "lucide-react";
-import { useTRPC } from "../integrations/trpc/react";
+import {
+	analyticsSummary,
+	ordersList,
+} from "#/lib/server-fns";
 
 export const Route = createFileRoute("/")({
 	component: BerandaPage,
@@ -23,7 +26,7 @@ function formatRupiah(amount: number) {
 	}).format(amount);
 }
 
-function formatRupiahCompact(amount: number) {
+export function formatRupiahCompact(amount: number) {
 	return new Intl.NumberFormat("id-ID", {
 		style: "currency",
 		currency: "IDR",
@@ -47,13 +50,19 @@ const STATUS_CONFIG: Record<string, { label: string; className: string }> = {
 	},
 };
 
-function BerandaPage() {
-	const trpc = useTRPC();
-	const { data: summary } = useSuspenseQuery(
-		trpc.analytics.summary.queryOptions(),
-	);
-	const { data: orders } = useSuspenseQuery(trpc.orders.list.queryOptions());
+export const analyticsSummaryQueryOptions = queryOptions({
+	queryKey: ["analytics", "summary"],
+	queryFn: () => analyticsSummary(),
+});
 
+export const ordersListQueryOptions = queryOptions({
+	queryKey: ["orders", "list"],
+	queryFn: () => ordersList(),
+});
+
+function BerandaPage() {
+	const { data: summary } = useSuspenseQuery(analyticsSummaryQueryOptions);
+	const { data: orders } = useSuspenseQuery(ordersListQueryOptions);
 	const recentOrders = orders?.slice(0, 5) ?? [];
 
 	const pendingCount =
