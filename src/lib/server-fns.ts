@@ -224,8 +224,23 @@ export const ordersGet = createServerFn({ method: "GET" })
 	.inputValidator((id: number) => id)
 	.handler(async ({ data: id }) => {
 		const order = await db
-			.select()
+			.select({
+				id: orders.id,
+				customerId: orders.customerId,
+				customerName: customers.name,
+				customerPhone: customers.phone,
+				status: orders.status,
+				paymentStatus: orders.paymentStatus,
+				paymentMethod: orders.paymentMethod,
+				amountPaid: orders.amountPaid,
+				notes: orders.notes,
+				nominal: orders.nominal,
+				estimatedCompletion: orders.estimatedCompletion,
+				createdAt: orders.createdAt,
+				updatedAt: orders.updatedAt,
+			})
 			.from(orders)
+			.innerJoin(customers, eq(orders.customerId, customers.id))
 			.where(eq(orders.id, id))
 			.limit(1);
 

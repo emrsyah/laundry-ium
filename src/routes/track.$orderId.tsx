@@ -10,8 +10,12 @@ import {
 	CreditCard,
 	Receipt,
 } from "lucide-react";
-import { ordersGet } from "#/lib/server-fns";
+import { ordersGet, settingsGet } from "#/lib/server-fns";
 import { Skeleton } from "../components/ui/skeleton";
+import { ReceiptTemplate } from "../components/ReceiptTemplate";
+import { generateReceiptPDF } from "#/lib/pdf-utils";
+import { useState, useRef } from "react";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/track/$orderId")({
 	loader: ({ params }) => {
@@ -43,6 +47,11 @@ export const trackOrderQueryOptions = (id: number) =>
 		queryFn: () => ordersGet({ data: id }),
 	});
 
+export const settingsQueryOptions = queryOptions({
+	queryKey: ["settings"],
+	queryFn: () => settingsGet(),
+});
+
 const STATUS_MAP: Record<string, { label: string; bg: string; text: string }> = {
 	PENDING: { label: "Menunggu", bg: "bg-yellow-100 dark:bg-yellow-500/10", text: "text-yellow-700 dark:text-yellow-500" },
 	DIPROSES: { label: "Sedang Diproses", bg: "bg-blue-100 dark:bg-blue-500/10", text: "text-blue-700 dark:text-blue-500" },
@@ -54,6 +63,23 @@ const STATUS_MAP: Record<string, { label: string; bg: string; text: string }> = 
 function OrderTrackingPage() {
 	const { id } = Route.useLoaderData();
 	const { data: order } = useSuspenseQuery(trackOrderQueryOptions(id));
+	const { data: settings } = useSuspenseQuery(settingsQueryOptions);
+	const [isPrinting, setIsPrinting] = useState(false);
+	const receiptRef = useRef<HTMLDivElement>(null);
+
+	const handlePrint = async () => {
+		setIsPrinting(true);
+		const tid = toast.loading("Menyiapkan struk...");
+		try {
+			await generateReceiptPDF(id, receiptRef.current);
+			toast.success("Struk berhasil diunduh", { id: tid });
+		} catch (err) {
+			console.error("Print error:", err);
+			toast.error("Gagal mengunduh struk", { id: tid });
+		} finally {
+			setIsPrinting(false);
+		}
+	};
 
 	if (!order) {
 		return (
@@ -166,11 +192,45 @@ function OrderTrackingPage() {
 						</div>
 					</div>
 
+					{/* Print Button */}
+					<button
+						type="button"
+						onClick={handlePrint}
+						disabled={isPrinting}
+						className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-slate-900 dark:bg-slate-800 text-white font-bold text-sm shadow-lg shadow-slate-200 dark:shadow-none hover:bg-slate-800 active:scale-95 transition-all disabled:opacity-50"
+					>
+						{isPrinting ? (
+							<Loader2 className="w-4 h-4 animate-spin" />
+						) : (
+							<Receipt className="w-4 h-4" />
+						)}
+						Unduh Struk (PDF)
+					</button>
+
 				</div>
 				
 				<p className="text-xs text-center text-muted-foreground mt-8 mb-4">
 					Terima kasih telah mempercayakan pakaian Anda di LaundryKu.
 				</p>
+			</div>
+
+			{/* Hidden Receipt Template for PDF Generation */}
+			<div className="absolute opacity-0 pointer-events-none -z-50" aria-hidden="true" ref={receiptRef}>
+				{order && settings && (
+					<ReceiptTemplate
+						order={{
+							...order,
+							items: order.items.map((i) => ({
+								...i,
+								subtotal: Number(i.subtotal),
+							})),
+						}}
+						settings={{
+							name: settings.name ?? "LaundryKu",
+							address: settings.address ?? "",
+						}}
+					/>
+				)}
 			</div>
 		</div>
 	);

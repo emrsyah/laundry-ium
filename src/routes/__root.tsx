@@ -5,10 +5,12 @@ import {
 	Outlet,
 	Scripts,
 } from "@tanstack/react-router";
-import { Suspense, useEffect } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { BottomNav } from "../components/BottomNav";
 import { Skeleton } from "../components/ui/skeleton";
 import { Toaster } from "../components/ui/sonner";
+import { AnimatePresence, motion } from "framer-motion";
+import { useLocation, useNavigate } from "@tanstack/react-router";
 import appCss from "../styles.css?url";
 
 interface MyRouterContext {
@@ -99,7 +101,13 @@ function ErrorFallback({ error, reset }: { error: Error; reset: () => void }) {
 	);
 }
 
+const TABS = ["/", "/orders", "/customers", "/analytics", "/settings"];
+
 function RootComponent() {
+	const navigate = useNavigate();
+	const location = useLocation();
+	const [direction, setDirection] = useState(0);
+
 	useEffect(() => {
 		if ("serviceWorker" in navigator) {
 			navigator.serviceWorker.register("/sw.js").catch((err) => {
@@ -108,9 +116,53 @@ function RootComponent() {
 		}
 	}, []);
 
+	const currentIndex = TABS.indexOf(location.pathname);
+	// Only allow swiping on main tabs
+	const isMainTab = currentIndex !== -1;
+
+	const handleDragEnd = (event: any, info: any) => {
+		if (!isMainTab) return;
+
+		const threshold = 100;
+		const velocity = info.velocity.x;
+		const offset = info.offset.x;
+
+		if (offset < -threshold || velocity < -500) {
+			// Swipe Left -> Go Right
+			if (currentIndex < TABS.length - 1) {
+				setDirection(1);
+				navigate({ to: TABS[currentIndex + 1] });
+			}
+		} else if (offset > threshold || velocity > 500) {
+			// Swipe Right -> Go Left
+			if (currentIndex > 0) {
+				setDirection(-1);
+				navigate({ to: TABS[currentIndex - 1] });
+			}
+		}
+	};
+
 	return (
 		<Suspense fallback={<PageFallback />}>
-			<Outlet />
+			<div className="relative h-full w-full">
+				<AnimatePresence mode="popLayout" initial={false} custom={direction}>
+					<motion.div
+						key={location.pathname}
+						custom={direction}
+						initial={{ opacity: 0, x: direction * 50 }}
+						animate={{ opacity: 1, x: 0 }}
+						exit={{ opacity: 0, x: direction * -50 }}
+						transition={{ type: "spring", damping: 25, stiffness: 200 }}
+						drag={isMainTab ? "x" : false}
+						dragConstraints={{ left: 0, right: 0 }}
+						dragElastic={0.2}
+						onDragEnd={handleDragEnd}
+						className="h-full w-full"
+					>
+						<Outlet />
+					</motion.div>
+				</AnimatePresence>
+			</div>
 		</Suspense>
 	);
 }

@@ -21,6 +21,7 @@ import {
 	X,
 	Share2,
 	QrCode,
+	Receipt,
 } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import { toast } from "sonner";
@@ -34,7 +35,10 @@ import {
 	ordersList,
 	ordersUpdate,
 	servicesList,
+	settingsGet,
 } from "#/lib/server-fns";
+import { ReceiptTemplate } from "../components/ReceiptTemplate";
+import { generateReceiptPDF } from "#/lib/pdf-utils";
 import { formatDate, formatRupiah } from "#/lib/utils";
 import { Button } from "../components/ui/button";
 import {
@@ -90,6 +94,11 @@ export const servicesListQueryOptions = queryOptions({
 export const customersListQueryOptions = queryOptions({
 	queryKey: ["customers", "list"],
 	queryFn: () => customersList(),
+});
+
+export const settingsQueryOptions = queryOptions({
+	queryKey: ["settings"],
+	queryFn: () => settingsGet(),
 });
 
 type OrderStatus = "PENDING" | "DIPROSES" | "SELESAI" | "DIAMBIL" | "BATAL";
@@ -165,6 +174,7 @@ function OrdersPage() {
 	const { data: orders = [] } = useSuspenseQuery(ordersListQueryOptions);
 	const { data: customers = [] } = useSuspenseQuery(customersListQueryOptions);
 	const { data: services = [] } = useSuspenseQuery(servicesListQueryOptions);
+	const { data: settings } = useSuspenseQuery(settingsQueryOptions);
 
 	const [search, setSearch] = useState("");
 	const [filterStatus, setFilterStatus] = useState<OrderStatus | "ALL">("ALL");
@@ -203,6 +213,8 @@ function OrdersPage() {
 	const [editFormErrors, setEditFormErrors] = useState<Record<string, string>>(
 		{},
 	);
+	const [isPrinting, setIsPrinting] = useState(false);
+	const receiptRef = useRef<HTMLDivElement>(null);
 
 	const [orderDetail, setOrderDetail] = useState<{ items?: { id: number; serviceId?: number | null; serviceName: string; quantity: number; unitPrice: number; subtotal: number }[] } | null>(null);
 	const [loadingDetail, setLoadingDetail] = useState(false);
@@ -497,11 +509,26 @@ function OrdersPage() {
 	}
 
 	function handleDeleteOrder() {
-		if (!selectedOrder) return;
 		if (window.confirm("Hapus pesanan ini secara permanen?")) {
+			if (!selectedOrder) return;
 			deleteMutation.mutate(selectedOrder.id);
 		}
 	}
+
+	const handlePrint = async () => {
+		if (!selectedOrder) return;
+		setIsPrinting(true);
+		const tid = toast.loading("Menyiapkan struk...");
+		try {
+			await generateReceiptPDF(selectedOrder.id, receiptRef.current);
+			toast.success("Struk berhasil diunduh", { id: tid });
+		} catch (err) {
+			console.error("Print error:", err);
+			toast.error("Gagal mengunduh struk", { id: tid });
+		} finally {
+			setIsPrinting(false);
+		}
+	};
 
 	return (
 		<div className="px-4 py-5 space-y-4">
@@ -936,9 +963,22 @@ function OrdersPage() {
 									<Button
 										variant="outline"
 										onClick={() => setShareOrderId(selectedOrder?.id ?? null)}
-										className="col-span-2 h-12 rounded-xl text-sm font-semibold gap-2 bg-slate-100/50 hover:bg-slate-100 border-slate-200 text-slate-700"
+										className="h-12 rounded-xl text-sm font-semibold gap-2 bg-slate-100/50 hover:bg-slate-100 border-slate-200 text-slate-700"
 									>
-										<QrCode className="h-4 w-4" /> Buka Kode QR Resi
+										<QrCode className="h-4 w-4" /> Resi QR
+									</Button>
+									<Button
+										variant="outline"
+										onClick={handlePrint}
+										disabled={isPrinting || !orderDetail}
+										className="h-12 rounded-xl text-sm font-semibold gap-2 bg-slate-900 dark:bg-slate-800 text-white border-transparent hover:bg-slate-800"
+									>
+										{isPrinting ? (
+											<Loader2 className="h-4 w-4 animate-spin" />
+										) : (
+											<Receipt className="h-4 w-4" />
+										)}
+										Struk PDF
 									</Button>
 								</div>
 							</div>
@@ -1493,6 +1533,25 @@ function OrdersPage() {
 					</div>
 				</DrawerContent>
 			</Drawer>
+
+			{/* Hidden Receipt Template for PDF Generation */}
+			<div className="absolute opacity-0 pointer-events-none -z-50" aria-hidden="true" ref={receiptRef}>
+				{selectedOrder && orderDetail && settings && (
+					<ReceiptTemplate
+						order={{
+							...selectedOrder,
+							items: (orderDetail.items || []).map((i) => ({
+								...i,
+								subtotal: Number(i.subtotal),
+							})),
+						}}
+						settings={{
+							name: settings.name ?? "LaundryKu",
+							address: settings.address ?? "",
+						}}
+					/>
+				)}
+			</div>
 		</div>
 	);
 }
