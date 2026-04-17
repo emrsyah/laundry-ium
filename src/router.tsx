@@ -8,6 +8,8 @@ import TanstackQueryProvider, {
   getContext,
 } from './integrations/tanstack-query/root-provider'
 
+import { Skeleton } from './components/ui/skeleton'
+
 export function getRouter() {
   const context = getContext()
 
@@ -18,8 +20,21 @@ export function getRouter() {
     defaultPreload: 'intent',
     defaultPreloadStaleTime: 0,
     defaultPendingComponent: () => (
-      <div className="flex h-40 items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-primary/60" />
+      <div className="px-4 py-8 space-y-4 w-full max-w-md mx-auto">
+        <div className="flex items-center justify-between mb-4 mt-2">
+          <Skeleton className="h-8 w-32" />
+          <Skeleton className="h-10 w-10 rounded-full" />
+        </div>
+        <Skeleton className="h-28 w-full rounded-2xl" />
+        <div className="grid grid-cols-2 gap-3 mt-4">
+          <Skeleton className="h-32 rounded-2xl" />
+          <Skeleton className="h-32 rounded-2xl" />
+        </div>
+        <div className="space-y-3 mt-8">
+          <Skeleton className="h-16 w-full rounded-2xl" />
+          <Skeleton className="h-16 w-full rounded-2xl" />
+          <Skeleton className="h-16 w-full rounded-2xl" />
+        </div>
       </div>
     ),
 

@@ -52,6 +52,7 @@ import {
 	SelectValue,
 } from "../components/ui/select";
 import { Textarea } from "../components/ui/textarea";
+import { Skeleton } from "../components/ui/skeleton";
 import { z } from "zod";
 
 export const Route = createFileRoute("/orders")({
@@ -811,8 +812,18 @@ function OrdersPage() {
 
 								{/* Order Items */}
 								{loadingDetail ? (
-									<div className="flex items-center justify-center py-4">
-										<Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+									<div className="rounded-2xl border border-border bg-muted/30 p-4 space-y-4">
+										<Skeleton className="h-3 w-1/3" />
+										<div className="space-y-3">
+											<div className="flex justify-between">
+												<Skeleton className="h-4 w-1/2" />
+												<Skeleton className="h-4 w-1/4" />
+											</div>
+											<div className="flex justify-between">
+												<Skeleton className="h-4 w-2/5" />
+												<Skeleton className="h-4 w-1/4" />
+											</div>
+										</div>
 									</div>
 								) : orderDetail?.items?.length ? (
 									<div className="rounded-2xl border border-border bg-muted/30 p-4 space-y-2">
