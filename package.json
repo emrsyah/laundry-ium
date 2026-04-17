@@ -7,7 +7,8 @@
   },
   "scripts": {
     "dev": "vite dev --port 3000",
-    "build": "vite build",
+    "build": "vite build && tsx scripts/generate-sw.ts",
+    "generate-sw": "tsx scripts/generate-sw.ts",
     "preview": "vite preview",
     "test": "vitest run",
     "format": "biome format",
@@ -69,7 +70,8 @@
     "typescript": "^5.7.2",
     "vite": "^8.0.0",
     "vite-plugin-pwa": "^1.2.0",
-    "vitest": "^3.0.5"
+    "vitest": "^3.0.5",
+    "workbox-build": "^7.4.0"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

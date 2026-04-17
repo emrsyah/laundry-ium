@@ -18,22 +18,7 @@ export const Route = createFileRoute("/")({
 	component: BerandaPage,
 });
 
-function formatRupiah(amount: number) {
-	return new Intl.NumberFormat("id-ID", {
-		style: "currency",
-		currency: "IDR",
-		maximumFractionDigits: 0,
-	}).format(amount);
-}
-
-export function formatRupiahCompact(amount: number) {
-	return new Intl.NumberFormat("id-ID", {
-		style: "currency",
-		currency: "IDR",
-		maximumFractionDigits: 0,
-		notation: "compact",
-	}).format(amount);
-}
+import { formatRupiah, formatRupiahCompact } from "#/lib/utils";
 
 const STATUS_CONFIG: Record<string, { label: string; className: string }> = {
 	PENDING: {

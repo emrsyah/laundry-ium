@@ -22,18 +22,18 @@ import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import {
-	Sheet,
-	SheetContent,
-	SheetDescription,
-	SheetHeader,
-	SheetTitle,
-} from "../components/ui/sheet";
+	Drawer,
+	DrawerContent,
+	DrawerDescription,
+	DrawerHeader,
+	DrawerTitle,
+} from "../components/ui/drawer";
 import { Textarea } from "../components/ui/textarea";
 import {
 	customersList,
 	customersCreate,
 } from "#/lib/server-fns";
-import { formatRupiahCompact } from ".";
+import { formatRupiahCompact } from "#/lib/utils";
 
 export const Route = createFileRoute("/customers/")({
 	component: CustomersListPage,
@@ -224,90 +224,92 @@ function CustomersListPage() {
 				)}
 			</div>
 
-			{/* Add Customer Sheet */}
-			<Sheet
+			{/* Add Customer Drawer */}
+			<Drawer
 				open={showForm}
 				onOpenChange={(open) => {
+					setShowForm(open);
 					if (!open) {
-						setShowForm(false);
 						setFormErrors({});
 					}
 				}}
 			>
-				<SheetContent side="bottom" className="rounded-t-3xl">
-					<SheetHeader className="mb-2">
-						<SheetTitle>Tambah Pelanggan</SheetTitle>
-						<SheetDescription>Masukkan data pelanggan baru</SheetDescription>
-					</SheetHeader>
+				<DrawerContent>
+					<div className="mx-auto w-full max-w-lg">
+						<DrawerHeader className="text-left px-4 pt-6">
+							<DrawerTitle>Tambah Pelanggan</DrawerTitle>
+							<DrawerDescription>Masukkan data pelanggan baru</DrawerDescription>
+						</DrawerHeader>
 
-					<div className="space-y-4 pb-4">
-						<div className="space-y-2">
-							<Label htmlFor="customer-name" className="text-sm font-semibold">
-								Nama Lengkap <span className="text-destructive">*</span>
-							</Label>
-							<Input
-								id="customer-name"
-								type="text"
-								placeholder="Budi Santoso"
-								value={form.name}
-								onChange={(e) => setForm({ ...form, name: e.target.value })}
-								className="h-11 rounded-xl"
-							/>
-							{formErrors.name && (
-								<p className="text-xs text-destructive">{formErrors.name}</p>
-							)}
-						</div>
+						<div className="space-y-4 px-4 pb-8 pt-2">
+							<div className="space-y-2">
+								<Label htmlFor="customer-name" className="text-sm font-semibold text-foreground/80">
+									Nama Lengkap <span className="text-destructive font-black">*</span>
+								</Label>
+								<Input
+									id="customer-name"
+									type="text"
+									placeholder="Budi Santoso"
+									value={form.name}
+									onChange={(e) => setForm({ ...form, name: e.target.value })}
+									className="h-12 rounded-2xl bg-muted/30 border-muted-foreground/10 focus:border-primary/30 transition-all"
+								/>
+								{formErrors.name && (
+									<p className="text-xs font-bold text-destructive pl-1">{formErrors.name}</p>
+								)}
+							</div>
 
-						<div className="space-y-2">
-							<Label htmlFor="customer-phone" className="text-sm font-semibold">
-								Nomor HP (WhatsApp) <span className="text-destructive">*</span>
-							</Label>
-							<Input
-								id="customer-phone"
-								type="tel"
-								placeholder="08123456789"
-								value={form.phone}
-								onChange={(e) => setForm({ ...form, phone: e.target.value })}
-								className="h-11 rounded-xl"
-							/>
-							{formErrors.phone && (
-								<p className="text-xs text-destructive">{formErrors.phone}</p>
-							)}
-						</div>
+							<div className="space-y-2">
+								<Label htmlFor="customer-phone" className="text-sm font-semibold text-foreground/80">
+									Nomor HP (WhatsApp) <span className="text-destructive font-black">*</span>
+								</Label>
+								<Input
+									id="customer-phone"
+									type="tel"
+									placeholder="08123456789"
+									value={form.phone}
+									onChange={(e) => setForm({ ...form, phone: e.target.value })}
+									className="h-12 rounded-2xl bg-muted/30 border-muted-foreground/10 focus:border-primary/30 transition-all"
+								/>
+								{formErrors.phone && (
+									<p className="text-xs font-bold text-destructive pl-1">{formErrors.phone}</p>
+								)}
+							</div>
 
-						<div className="space-y-2">
-							<Label
-								htmlFor="customer-address"
-								className="text-sm font-semibold"
+							<div className="space-y-2">
+								<Label
+									htmlFor="customer-address"
+									className="text-sm font-semibold text-foreground/80"
+								>
+									Alamat
+								</Label>
+								<Textarea
+									id="customer-address"
+									placeholder="Jl. Contoh No. 1, Kota..."
+									value={form.address}
+									onChange={(e) => setForm({ ...form, address: e.target.value })}
+									rows={2}
+									className="rounded-2xl bg-muted/30 border-muted-foreground/10 focus:border-primary/30 transition-all resize-none"
+								/>
+							</div>
+
+							<Button
+								onClick={validateAndSubmit}
+								disabled={createMutation.isPending}
+								className="w-full h-13 rounded-2xl text-sm font-black shadow-lg shadow-primary/20 mt-2 hover:scale-[1.01] active:scale-[0.98] transition-all"
 							>
-								Alamat
-							</Label>
-							<Textarea
-								id="customer-address"
-								placeholder="Jl. Contoh No. 1, Kota..."
-								value={form.address}
-								onChange={(e) => setForm({ ...form, address: e.target.value })}
-								rows={2}
-								className="rounded-xl resize-none"
-							/>
+								{createMutation.isPending ? (
+									<>
+										<Loader2 className="h-4 w-4 animate-spin mr-2" /> Menyimpan...
+									</>
+								) : (
+									"Simpan Pelanggan"
+								)}
+							</Button>
 						</div>
-
-						<Button
-							onClick={validateAndSubmit}
-							disabled={createMutation.isPending}
-							className="w-full h-12 rounded-xl text-sm font-semibold"
-						>
-							{createMutation.isPending ? (
-								<>
-									<Loader2 className="h-4 w-4 animate-spin" /> Menyimpan...
-								</>
-							) : (
-								"Simpan Pelanggan"
-							)}
-						</Button>
 					</div>
-				</SheetContent>
-			</Sheet>
+				</DrawerContent>
+			</Drawer>
 		</div>
 	);
 }

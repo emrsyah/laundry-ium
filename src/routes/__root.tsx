@@ -5,7 +5,7 @@ import {
 	Outlet,
 	Scripts,
 } from "@tanstack/react-router";
-import { Suspense } from "react";
+import { Suspense, useEffect } from "react";
 import { BottomNav } from "../components/BottomNav";
 import { Skeleton } from "../components/ui/skeleton";
 import { Toaster } from "../components/ui/sonner";
@@ -30,6 +30,14 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 			{
 				name: "theme-color",
 				content: "#f95d85",
+			},
+			{
+				name: "apple-mobile-web-app-capable",
+				content: "yes",
+			},
+			{
+				name: "apple-mobile-web-app-status-bar-style",
+				content: "default",
 			},
 			{
 				name: "description",
@@ -92,6 +100,14 @@ function ErrorFallback({ error, reset }: { error: Error; reset: () => void }) {
 }
 
 function RootComponent() {
+	useEffect(() => {
+		if ("serviceWorker" in navigator) {
+			navigator.serviceWorker.register("/sw.js").catch((err) => {
+				console.error("SW registration failed:", err);
+			});
+		}
+	}, []);
+
 	return (
 		<Suspense fallback={<PageFallback />}>
 			<Outlet />

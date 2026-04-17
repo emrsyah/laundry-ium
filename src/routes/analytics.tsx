@@ -6,7 +6,7 @@ import {
 	analyticsWeeklyRevenue,
 	analyticsServiceBreakdown,
 } from "#/lib/server-fns";
-import { formatRupiahCompact } from ".";
+import { formatRupiahCompact } from "#/lib/utils";
 
 export const Route = createFileRoute("/analytics")({
 	component: AnalyticsPage,

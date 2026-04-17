@@ -12,7 +12,7 @@ import {
   TrendingUp
 } from "lucide-react";
 import { customersGet } from "#/lib/server-fns";
-import { formatRupiahCompact } from ".";
+import { formatRupiah, formatRupiahCompact, formatDate } from "#/lib/utils";
 import { Button } from "../components/ui/button";
 
 export const Route = createFileRoute("/customers/$customerId")({
@@ -38,22 +38,7 @@ const STATUS_CONFIG: Record<string, { label: string; className: string }> = {
   },
 };
 
-function formatRupiah(amount: number) {
-  return new Intl.NumberFormat("id-ID", {
-    style: "currency",
-    currency: "IDR",
-    maximumFractionDigits: 0,
-  }).format(amount);
-}
 
-function formatDate(date: string | Date | null) {
-  if (!date) return "-";
-  return new Date(date).toLocaleDateString("id-ID", {
-    day: "numeric",
-    month: "short",
-    year: "numeric"
-  });
-}
 
 function CustomerDetailPage() {
   const { id } = Route.useLoaderData();
