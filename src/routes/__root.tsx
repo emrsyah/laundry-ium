@@ -124,7 +124,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 			</head>
 			<body className="font-sans antialiased bg-background text-foreground">
 				<div className="relative mx-auto min-h-screen max-w-md shadow-2xl overflow-hidden bg-background">
-					<main className="pb-20" vaul-drawer-wrapper="">{children}</main>
+					<main className="pb-[calc(5rem+env(safe-area-inset-bottom))]" vaul-drawer-wrapper="">{children}</main>
 					<BottomNav />
 				</div>
 				<Toaster position="top-center" richColors closeButton />

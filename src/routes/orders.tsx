@@ -1002,6 +1002,7 @@ function OrdersPage() {
 										<div>
 											<Input
 												type="text"
+												autoComplete="name"
 												placeholder="Nama Pelanggan"
 												value={newCustomer.name}
 												onChange={(e) =>
@@ -1010,7 +1011,7 @@ function OrdersPage() {
 														name: e.target.value,
 													})
 												}
-												className="h-11 rounded-xl"
+												className="h-12 rounded-xl text-base"
 											/>
 											{formErrors.name && (
 												<p className="text-xs text-destructive mt-1">
@@ -1021,6 +1022,8 @@ function OrdersPage() {
 										<div>
 											<Input
 												type="tel"
+												inputMode="tel"
+												autoComplete="tel"
 												placeholder="Nomor HP (WhatsApp)"
 												value={newCustomer.phone}
 												onChange={(e) =>
@@ -1029,7 +1032,7 @@ function OrdersPage() {
 														phone: e.target.value,
 													})
 												}
-												className="h-11 rounded-xl"
+												className="h-12 rounded-xl text-base"
 											/>
 											{formErrors.phone && (
 												<p className="text-xs text-destructive mt-1">
@@ -1068,25 +1071,27 @@ function OrdersPage() {
 												<button
 													type="button"
 													onClick={() => setItemQty(Math.max(1, itemQty - 1))}
-													className="h-8 w-8 rounded-lg flex items-center justify-center hover:bg-muted transition-colors"
+													className="h-10 w-10 md:h-8 md:w-8 rounded-lg flex items-center justify-center hover:bg-muted active:scale-95 touch-manipulation transition-all"
 												>
-													<Minus className="h-4 w-4" />
+													<Minus className="h-5 w-5 md:h-4 md:w-4" />
 												</button>
 												<Input
-													type="number"
+													type="text"
+													inputMode="numeric"
+													pattern="[0-9]*"
 													min={1}
 													value={itemQty}
 													onChange={(e) =>
 														setItemQty(Math.max(1, Number(e.target.value) || 1))
 													}
-													className="w-16 h-8 text-center text-sm rounded-lg border-0 p-0 focus-visible:ring-0"
+													className="h-10 md:h-8 w-16 text-center border-0 bg-transparent ring-0 focus-visible:ring-0 text-base font-semibold"
 												/>
 												<button
 													type="button"
 													onClick={() => setItemQty(itemQty + 1)}
-													className="h-8 w-8 rounded-lg flex items-center justify-center hover:bg-muted transition-colors"
+													className="h-10 w-10 md:h-8 md:w-8 rounded-lg flex items-center justify-center hover:bg-muted active:scale-95 touch-manipulation transition-all"
 												>
-													<Plus className="h-4 w-4" />
+													<Plus className="h-5 w-5 md:h-4 md:w-4" />
 												</button>
 											</div>
 											<Button

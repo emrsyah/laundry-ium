@@ -528,6 +528,7 @@ function CustomerDetailPage() {
 								</Label>
 								<Input
 									type="text"
+									autoComplete="name"
 									placeholder="Budi Santoso"
 									value={form.name}
 									onChange={(e) => setForm({ ...form, name: e.target.value })}
@@ -546,6 +547,8 @@ function CustomerDetailPage() {
 								</Label>
 								<Input
 									type="tel"
+									inputMode="tel"
+									autoComplete="tel"
 									placeholder="08123456789"
 									value={form.phone}
 									onChange={(e) => setForm({ ...form, phone: e.target.value })}
