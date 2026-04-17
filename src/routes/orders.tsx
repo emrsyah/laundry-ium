@@ -19,6 +19,8 @@ import {
 	ShoppingBag,
 	Trash2,
 	X,
+	Share2,
+	QrCode,
 } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import { toast } from "sonner";
@@ -42,6 +44,14 @@ import {
 	DrawerHeader,
 	DrawerTitle,
 } from "../components/ui/drawer";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogHeader,
+	DialogTitle,
+} from "../components/ui/dialog";
+import { QRCodeSVG } from "qrcode.react";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import {
@@ -163,6 +173,7 @@ function OrdersPage() {
 	);
 	const [showCreateForm, setShowCreateForm] = useState(false);
 	const [showEditForm, setShowEditForm] = useState(false);
+	const [shareOrderId, setShareOrderId] = useState<number | null>(null);
 
 	// Create form state
 	const [customerId, setCustomerId] = useState("");
@@ -220,8 +231,11 @@ function OrdersPage() {
 			notes?: string;
 			estimatedCompletion?: string;
 		}) => ordersCreate({ data }),
-		onSuccess: () => {
-			queryClient.invalidateQueries(ordersListQueryOptions);
+		onSuccess: (data) => {
+			// Instead of navigating and popping the drawer, we only pop the QR dialog!
+			queryClient.invalidateQueries(ordersListQueryOptions).then(() => {
+				setShareOrderId(data.id);
+			});
 			queryClient.invalidateQueries(analyticsSummaryQueryOptions);
 			resetCreateForm();
 			setShowCreateForm(false);
@@ -919,12 +933,57 @@ function OrdersPage() {
 										)}
 										Hapus
 									</Button>
+									<Button
+										variant="outline"
+										onClick={() => setShareOrderId(selectedOrder?.id ?? null)}
+										className="col-span-2 h-12 rounded-xl text-sm font-semibold gap-2 bg-slate-100/50 hover:bg-slate-100 border-slate-200 text-slate-700"
+									>
+										<QrCode className="h-4 w-4" /> Buka Kode QR Resi
+									</Button>
 								</div>
 							</div>
 						)}
 					</div>
 				</DrawerContent>
 			</Drawer>
+
+			<Dialog open={!!shareOrderId} onOpenChange={(v) => !v && setShareOrderId(null)}>
+				<DialogContent className="max-w-xs rounded-2xl w-11/12 mx-auto">
+					<DialogHeader>
+						<DialogTitle className="text-center font-bold">Pindai Resi</DialogTitle>
+						<DialogDescription className="text-center text-xs">
+							Lacak status pesanan #{shareOrderId?.toString().padStart(4, "0")}
+						</DialogDescription>
+					</DialogHeader>
+					<div className="flex flex-col items-center justify-center p-6 space-y-6">
+						<div className="bg-white p-3 rounded-2xl shadow-sm border border-slate-100">
+							{shareOrderId && (
+								<QRCodeSVG
+									value={`${window.location.origin}/track/${shareOrderId}`}
+									size={180}
+									bgColor={"#ffffff"}
+									fgColor={"#0f172a"}
+									level={"Q"}
+								/>
+							)}
+						</div>
+						<div className="w-full flex gap-2">
+							<Button
+								variant="default"
+								className="flex-1 h-11 rounded-xl text-sm font-bold gap-2"
+								onClick={() => {
+									if (shareOrderId) {
+										navigator.clipboard.writeText(`${window.location.origin}/track/${shareOrderId}`);
+										toast.success("Tautan resi berhasil disalin!");
+									}
+								}}
+							>
+								<Share2 className="h-4 w-4" /> Salin Tautan
+							</Button>
+						</div>
+					</div>
+				</DialogContent>
+			</Dialog>
 
 			{/* Create Order Drawer */}
 			<Drawer

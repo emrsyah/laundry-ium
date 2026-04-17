@@ -15,6 +15,7 @@ import { Route as CustomersRouteImport } from './routes/customers'
 import { Route as AnalyticsRouteImport } from './routes/analytics'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CustomersIndexRouteImport } from './routes/customers.index'
+import { Route as TrackOrderIdRouteImport } from './routes/track.$orderId'
 import { Route as CustomersCustomerIdRouteImport } from './routes/customers.$customerId'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 
@@ -48,6 +49,11 @@ const CustomersIndexRoute = CustomersIndexRouteImport.update({
   path: '/',
   getParentRoute: () => CustomersRoute,
 } as any)
+const TrackOrderIdRoute = TrackOrderIdRouteImport.update({
+  id: '/track/$orderId',
+  path: '/track/$orderId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CustomersCustomerIdRoute = CustomersCustomerIdRouteImport.update({
   id: '/$customerId',
   path: '/$customerId',
@@ -66,6 +72,7 @@ export interface FileRoutesByFullPath {
   '/orders': typeof OrdersRoute
   '/settings': typeof SettingsRoute
   '/customers/$customerId': typeof CustomersCustomerIdRoute
+  '/track/$orderId': typeof TrackOrderIdRoute
   '/customers/': typeof CustomersIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
 }
@@ -75,6 +82,7 @@ export interface FileRoutesByTo {
   '/orders': typeof OrdersRoute
   '/settings': typeof SettingsRoute
   '/customers/$customerId': typeof CustomersCustomerIdRoute
+  '/track/$orderId': typeof TrackOrderIdRoute
   '/customers': typeof CustomersIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
 }
@@ -86,6 +94,7 @@ export interface FileRoutesById {
   '/orders': typeof OrdersRoute
   '/settings': typeof SettingsRoute
   '/customers/$customerId': typeof CustomersCustomerIdRoute
+  '/track/$orderId': typeof TrackOrderIdRoute
   '/customers/': typeof CustomersIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
 }
@@ -98,6 +107,7 @@ export interface FileRouteTypes {
     | '/orders'
     | '/settings'
     | '/customers/$customerId'
+    | '/track/$orderId'
     | '/customers/'
     | '/api/auth/$'
   fileRoutesByTo: FileRoutesByTo
@@ -107,6 +117,7 @@ export interface FileRouteTypes {
     | '/orders'
     | '/settings'
     | '/customers/$customerId'
+    | '/track/$orderId'
     | '/customers'
     | '/api/auth/$'
   id:
@@ -117,6 +128,7 @@ export interface FileRouteTypes {
     | '/orders'
     | '/settings'
     | '/customers/$customerId'
+    | '/track/$orderId'
     | '/customers/'
     | '/api/auth/$'
   fileRoutesById: FileRoutesById
@@ -127,6 +139,7 @@ export interface RootRouteChildren {
   CustomersRoute: typeof CustomersRouteWithChildren
   OrdersRoute: typeof OrdersRoute
   SettingsRoute: typeof SettingsRoute
+  TrackOrderIdRoute: typeof TrackOrderIdRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
 }
 
@@ -174,6 +187,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CustomersIndexRouteImport
       parentRoute: typeof CustomersRoute
     }
+    '/track/$orderId': {
+      id: '/track/$orderId'
+      path: '/track/$orderId'
+      fullPath: '/track/$orderId'
+      preLoaderRoute: typeof TrackOrderIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/customers/$customerId': {
       id: '/customers/$customerId'
       path: '/$customerId'
@@ -211,6 +231,7 @@ const rootRouteChildren: RootRouteChildren = {
   CustomersRoute: CustomersRouteWithChildren,
   OrdersRoute: OrdersRoute,
   SettingsRoute: SettingsRoute,
+  TrackOrderIdRoute: TrackOrderIdRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
 }
 export const routeTree = rootRouteImport
