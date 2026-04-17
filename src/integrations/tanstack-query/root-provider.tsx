@@ -10,7 +10,10 @@ import { TRPCProvider } from '#/integrations/trpc/react'
 function getUrl() {
   const base = (() => {
     if (typeof window !== 'undefined') return ''
-    return `http://localhost:${process.env.PORT ?? 3000}`
+    // SSR: use current request host (works on Vercel, Node, etc.)
+    return process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : `http://localhost:${process.env.PORT ?? 3000}`
   })()
   return `${base}/api/trpc`
 }
