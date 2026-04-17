@@ -33,6 +33,14 @@ const STATUS_CONFIG: Record<string, { label: string; className: string }> = {
 		label: "Selesai",
 		className: "bg-green-100 text-green-700 border-green-200",
 	},
+	DIAMBIL: {
+		label: "Diambil",
+		className: "bg-indigo-100 text-indigo-700 border-indigo-200",
+	},
+	BATAL: {
+		label: "Batal",
+		className: "bg-gray-100 text-gray-500 border-gray-200",
+	},
 };
 
 export const analyticsSummaryQueryOptions = queryOptions({
@@ -48,7 +56,9 @@ export const ordersListQueryOptions = queryOptions({
 function BerandaPage() {
 	const { data: summary } = useSuspenseQuery(analyticsSummaryQueryOptions);
 	const { data: orders } = useSuspenseQuery(ordersListQueryOptions);
-	const recentOrders = orders?.slice(0, 5) ?? [];
+	const recentOrders = orders
+		?.filter((o) => o.status !== "BATAL")
+		.slice(0, 5) ?? [];
 
 	const pendingCount =
 		orders?.filter((o) => o.status === "PENDING").length ?? 0;
@@ -69,6 +79,7 @@ function BerandaPage() {
 			</div>
 
 			{/* Summary Cards */}
+		<div className="space-y-3">
 			<div className="grid grid-cols-2 gap-3">
 				<div className="rounded-2xl bg-primary p-4 text-primary-foreground shadow-lg">
 					<div className="flex items-center gap-2 mb-1.5">
@@ -97,6 +108,19 @@ function BerandaPage() {
 					<p className="text-xs opacity-80 mt-1">hari ini</p>
 				</div>
 			</div>
+			<div className="rounded-2xl border-2 border-red-200 bg-red-50 p-4 shadow-sm">
+				<div className="flex items-center gap-2 mb-1.5">
+					<Wallet className="h-4 w-4 text-red-600" />
+					<span className="text-xs font-semibold text-red-700">
+						Belum Bayar
+					</span>
+				</div>
+				<p className="text-2xl font-bold text-red-700 leading-tight">
+					{formatRupiahCompact(summary?.unpaidToday ?? 0)}
+				</p>
+				<p className="text-xs text-red-600 opacity-80 mt-1">hari ini</p>
+			</div>
+		</div>
 
 			{/* Quick Actions */}
 			<div>
@@ -183,8 +207,9 @@ function BerandaPage() {
 											{order.customerName}
 										</p>
 										<p className="text-xs text-muted-foreground">
-											{order.type === "kiloan" ? "Cuci Kiloan" : "Cuci Satuan"}{" "}
-											&middot; {formatRupiah(order.nominal)}
+											{order.notes?.slice(0, 30) || "Catatan kosong"}
+											{order.notes && order.notes.length > 30 ? "..." : ""} &middot;{" "}
+											{formatRupiah(order.nominal)}
 										</p>
 									</div>
 									<span

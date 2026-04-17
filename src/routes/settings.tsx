@@ -10,30 +10,61 @@ import {
 	CreditCard,
 	Loader2,
 	MessageSquare,
+	Pencil,
+	Plus,
 	Save,
+	Shirt,
 	Store,
+	Trash2,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import {
+	servicesCreate,
+	servicesDelete,
+	servicesList,
+	servicesUpdate,
+	settingsGet,
+	settingsUpdate,
+} from "#/lib/server-fns";
+import { formatRupiah } from "#/lib/utils";
 import { Button } from "../components/ui/button";
+import {
+	Drawer,
+	DrawerContent,
+	DrawerDescription,
+	DrawerHeader,
+	DrawerTitle,
+} from "../components/ui/drawer";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Textarea } from "../components/ui/textarea";
-import { settingsGet, settingsUpdate } from "#/lib/server-fns";
 
 export const Route = createFileRoute("/settings")({
 	component: SettingsPage,
 });
-
 
 export const settingsGetQueryOptions = queryOptions({
 	queryKey: ["settings"],
 	queryFn: () => settingsGet(),
 });
 
-	function SettingsPage() {
+export const servicesListQueryOptions = queryOptions({
+	queryKey: ["services", "list"],
+	queryFn: () => servicesList(),
+});
+
+type ServiceForm = {
+	name: string;
+	category: "kiloan" | "satuan";
+	unit: string;
+	price: string;
+};
+
+function SettingsPage() {
 	const queryClient = useQueryClient();
 	const { data: settings } = useSuspenseQuery(settingsGetQueryOptions);
+	const { data: services = [] } = useSuspenseQuery(servicesListQueryOptions);
 
 	const [form, setForm] = useState({
 		name: "",
@@ -44,6 +75,15 @@ export const settingsGetQueryOptions = queryOptions({
 	});
 
 	const [saved, setSaved] = useState(false);
+
+	const [showServiceDrawer, setShowServiceDrawer] = useState(false);
+	const [editingServiceId, setEditingServiceId] = useState<number | null>(null);
+	const [serviceForm, setServiceForm] = useState<ServiceForm>({
+		name: "",
+		category: "kiloan",
+		unit: "",
+		price: "",
+	});
 
 	useEffect(() => {
 		if (settings) {
@@ -74,10 +114,101 @@ export const settingsGetQueryOptions = queryOptions({
 			toast.success("Pengaturan berhasil disimpan!");
 			setTimeout(() => setSaved(false), 2500);
 		},
-		onError: () => {
-			toast.error("Gagal menyimpan pengaturan. Coba lagi.");
-		},
+		onError: () => toast.error("Gagal menyimpan pengaturan. Coba lagi."),
 	});
+
+	const serviceCreateMutation = useMutation({
+		mutationFn: (data: {
+			name: string;
+			category: string;
+			unit: string;
+			price: number;
+		}) => servicesCreate({ data }),
+		onSuccess: () => {
+			queryClient.invalidateQueries(servicesListQueryOptions);
+			resetServiceForm();
+			toast.success("Layanan berhasil ditambahkan");
+		},
+		onError: () => toast.error("Gagal menambah layanan. Coba lagi."),
+	});
+
+	const serviceUpdateMutation = useMutation({
+		mutationFn: (data: {
+			id: number;
+			name?: string;
+			category?: string;
+			unit?: string;
+			price?: number;
+		}) => servicesUpdate({ data }),
+		onSuccess: () => {
+			queryClient.invalidateQueries(servicesListQueryOptions);
+			setShowServiceDrawer(false);
+			toast.success("Layanan berhasil diperbarui");
+		},
+		onError: () => toast.error("Gagal memperbarui layanan. Coba lagi."),
+	});
+
+	const serviceDeleteMutation = useMutation({
+		mutationFn: (data: { id: number }) => servicesDelete({ data }),
+		onSuccess: () => {
+			queryClient.invalidateQueries(servicesListQueryOptions);
+			toast.success("Layanan berhasil dihapus");
+		},
+		onError: () => toast.error("Gagal menghapus layanan. Coba lagi."),
+	});
+
+	function resetServiceForm() {
+		setServiceForm({ name: "", category: "kiloan", unit: "", price: "" });
+		setEditingServiceId(null);
+	}
+
+	function openServiceDrawer(service?: (typeof services)[0]) {
+		if (service) {
+			setEditingServiceId(service.id);
+			setServiceForm({
+				name: service.name,
+				category: service.category as "kiloan" | "satuan",
+				unit: service.unit,
+				price: String(service.price),
+			});
+		} else {
+			resetServiceForm();
+		}
+		setShowServiceDrawer(true);
+	}
+
+	function handleServiceSubmit() {
+		if (
+			!serviceForm.name.trim() ||
+			!serviceForm.unit.trim() ||
+			!serviceForm.price
+		) {
+			toast.error("Lengkapi semua field");
+			return;
+		}
+		if (editingServiceId) {
+			serviceUpdateMutation.mutate({
+				id: editingServiceId,
+				name: serviceForm.name.trim(),
+				category: serviceForm.category,
+				unit: serviceForm.unit.trim(),
+				price: Number(serviceForm.price),
+			});
+		} else {
+			serviceCreateMutation.mutate({
+				name: serviceForm.name.trim(),
+				category: serviceForm.category,
+				unit: serviceForm.unit.trim(),
+				price: Number(serviceForm.price),
+			});
+		}
+	}
+
+	function handleServiceDelete(id: number, name: string) {
+		if (window.confirm(`Hapus layanan "${name}"?`)) {
+			serviceDeleteMutation.mutate({ id });
+		}
+	}
 
 	const paymentOptions = ["TUNAI", "TRANSFER", "QRIS", "OVO", "GOPAY", "DANA"];
 
@@ -151,8 +282,6 @@ export const settingsGetQueryOptions = queryOptions({
 						WhatsApp Notifikasi
 					</h2>
 				</div>
-
-				{/* Auto WA Toggle */}
 				<div className="flex items-center justify-between">
 					<div>
 						<p className="text-sm font-medium text-foreground">
@@ -165,10 +294,7 @@ export const settingsGetQueryOptions = queryOptions({
 					<button
 						type="button"
 						onClick={() =>
-							setForm({
-								...form,
-								autoWaEnabled: !form.autoWaEnabled,
-							})
+							setForm({ ...form, autoWaEnabled: !form.autoWaEnabled })
 						}
 						className={[
 							"relative h-7 w-12 rounded-full transition-colors shrink-0",
@@ -185,8 +311,6 @@ export const settingsGetQueryOptions = queryOptions({
 						/>
 					</button>
 				</div>
-
-				{/* WA Template */}
 				<div className="space-y-1.5">
 					<Label className="text-sm font-medium">Template Pesan</Label>
 					<p className="text-xs text-muted-foreground">
@@ -236,6 +360,78 @@ export const settingsGetQueryOptions = queryOptions({
 				</div>
 			</div>
 
+			{/* Services Catalog */}
+			<div className="rounded-2xl border border-border bg-card p-4 shadow-sm space-y-4">
+				<div className="flex items-center justify-between">
+					<div className="flex items-center gap-2">
+						<Shirt className="h-4 w-4 text-primary" />
+						<h2 className="text-sm font-bold text-foreground">
+							Katalog Layanan & Harga
+						</h2>
+					</div>
+					<Button
+						size="sm"
+						variant="outline"
+						className="rounded-full gap-1.5 h-9"
+						onClick={() => openServiceDrawer()}
+					>
+						<Plus className="h-4 w-4" /> Tambah
+					</Button>
+				</div>
+
+				{services.length === 0 ? (
+					<div className="text-center py-6">
+						<p className="text-sm text-muted-foreground">
+							Belum ada layanan. Tambah layanan pertama Anda.
+						</p>
+					</div>
+				) : (
+					<div className="space-y-2">
+						{services.map((service) => (
+							<div
+								key={service.id}
+								className="flex items-center justify-between rounded-xl border border-border bg-muted/30 p-3"
+							>
+								<div className="min-w-0">
+									<p className="text-sm font-semibold text-foreground truncate">
+										{service.name}
+									</p>
+									<div className="flex items-center gap-2 mt-0.5">
+										<span className="text-[11px] text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+											{service.category === "kiloan" ? "⚖️ Kiloan" : "👔 Satuan"}
+										</span>
+										<span className="text-[11px] text-muted-foreground">
+											/{service.unit}
+										</span>
+										<span className="text-xs font-bold text-primary">
+											{formatRupiah(service.price)}
+										</span>
+									</div>
+								</div>
+								<div className="flex items-center gap-1">
+									<button
+										type="button"
+										onClick={() => openServiceDrawer(service)}
+										className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+									>
+										<Pencil className="h-3.5 w-3.5" />
+									</button>
+									<button
+										type="button"
+										onClick={() =>
+											handleServiceDelete(service.id, service.name)
+										}
+										className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+									>
+										<Trash2 className="h-3.5 w-3.5" />
+									</button>
+								</div>
+							</div>
+						))}
+					</div>
+				)}
+			</div>
+
 			{/* Save Button */}
 			<Button
 				onClick={handleSave}
@@ -262,6 +458,125 @@ export const settingsGetQueryOptions = queryOptions({
 					</>
 				)}
 			</Button>
+
+			{/* Service Drawer */}
+			<Drawer
+				open={showServiceDrawer}
+				onOpenChange={(open) => {
+					if (!open) {
+						setShowServiceDrawer(false);
+						resetServiceForm();
+					}
+				}}
+			>
+				<DrawerContent>
+					<div className="mx-auto w-full max-w-lg">
+						<DrawerHeader className="text-left px-4 pt-6">
+							<DrawerTitle>
+								{editingServiceId ? "Edit Layanan" : "Tambah Layanan"}
+							</DrawerTitle>
+							<DrawerDescription>
+								{editingServiceId
+									? "Ubah detail layanan laundry"
+									: "Tambah layanan baru ke katalog"}
+							</DrawerDescription>
+						</DrawerHeader>
+						<div className="space-y-4 px-4 pb-8 pt-2">
+							<div className="space-y-2">
+								<Label className="text-sm font-semibold text-foreground/80">
+									Nama Layanan
+								</Label>
+								<Input
+									type="text"
+									placeholder="Cuci Kiloan, Setrika, Dry Cleaning..."
+									value={serviceForm.name}
+									onChange={(e) =>
+										setServiceForm({ ...serviceForm, name: e.target.value })
+									}
+									className="h-12 rounded-2xl bg-muted/30 border-muted-foreground/10 focus:border-primary/30 transition-all"
+								/>
+							</div>
+							<div className="space-y-2">
+								<Label className="text-sm font-semibold text-foreground/80">
+									Kategori
+								</Label>
+								<div className="flex bg-muted/50 p-1 rounded-xl">
+									{(["kiloan", "satuan"] as const).map((cat) => (
+										<button
+											key={cat}
+											type="button"
+											onClick={() =>
+												setServiceForm({ ...serviceForm, category: cat })
+											}
+											className={[
+												"flex-1 text-sm font-medium py-2 rounded-lg transition-all",
+												serviceForm.category === cat
+													? "bg-background shadow-sm text-foreground"
+													: "text-muted-foreground",
+											].join(" ")}
+										>
+											{cat === "kiloan" ? "⚖️ Kiloan" : "👔 Satuan"}
+										</button>
+									))}
+								</div>
+							</div>
+							<div className="space-y-2">
+								<Label className="text-sm font-semibold text-foreground/80">
+									Satuan
+								</Label>
+								<Input
+									type="text"
+									placeholder="kg, pcs, potong..."
+									value={serviceForm.unit}
+									onChange={(e) =>
+										setServiceForm({ ...serviceForm, unit: e.target.value })
+									}
+									className="h-12 rounded-2xl bg-muted/30 border-muted-foreground/10 focus:border-primary/30 transition-all"
+								/>
+							</div>
+							<div className="space-y-2">
+								<Label className="text-sm font-semibold text-foreground/80">
+									Harga per Satuan
+								</Label>
+								<div className="relative">
+									<span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-semibold text-sm pr-2 border-r border-border">
+										Rp
+									</span>
+									<Input
+										type="number"
+										placeholder="7000"
+										value={serviceForm.price}
+										onChange={(e) =>
+											setServiceForm({ ...serviceForm, price: e.target.value })
+										}
+										className="pl-14 h-12 rounded-2xl bg-muted/30 border-muted-foreground/10 focus:border-primary/30 transition-all text-base font-bold"
+									/>
+								</div>
+							</div>
+							<Button
+								onClick={handleServiceSubmit}
+								disabled={
+									serviceCreateMutation.isPending ||
+									serviceUpdateMutation.isPending
+								}
+								className="w-full h-13 rounded-2xl text-sm font-black shadow-lg shadow-primary/20 mt-2 hover:scale-[1.01] active:scale-[0.98] transition-all"
+							>
+								{serviceCreateMutation.isPending ||
+								serviceUpdateMutation.isPending ? (
+									<>
+										<Loader2 className="h-4 w-4 animate-spin mr-2" />{" "}
+										Menyimpan...
+									</>
+								) : editingServiceId ? (
+									"Simpan Perubahan"
+								) : (
+									"Tambah Layanan"
+								)}
+							</Button>
+						</div>
+					</div>
+				</DrawerContent>
+			</Drawer>
 		</div>
 	);
 }

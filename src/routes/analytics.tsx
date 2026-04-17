@@ -37,9 +37,7 @@ function AnalyticsPage() {
 	const totalRevenue = weekly.reduce((acc, d) => acc + d.revenue, 0);
 	const totalOrders = weekly.reduce((acc, d) => acc + d.count, 0);
 
-	const kiloan = services.find((s) => s.type === "kiloan");
-	const satuan = services.find((s) => s.type === "satuan");
-	const totalServiceOrders = (kiloan?.count ?? 0) + (satuan?.count ?? 0);
+	const totalServiceOrders = services.reduce((acc, s) => acc + s.count, 0);
 
 	return (
 		<div className="px-4 py-5 space-y-5">
@@ -121,39 +119,35 @@ function AnalyticsPage() {
 				)}
 			</div>
 
-			{/* Service Breakdown */}
-			<div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-				<div className="flex items-center gap-2 mb-4">
-					<Shirt className="h-4 w-4 text-primary" />
-					<h2 className="text-sm font-bold text-foreground">Jenis Layanan</h2>
-				</div>
+		{/* Service Breakdown */}
+		<div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+			<div className="flex items-center gap-2 mb-4">
+				<Shirt className="h-4 w-4 text-primary" />
+				<h2 className="text-sm font-bold text-foreground">Jenis Layanan</h2>
+			</div>
 
-				{totalServiceOrders === 0 ? (
-					<p className="text-sm text-muted-foreground text-center py-4">
-						Belum ada data layanan
-					</p>
-				) : (
-					<div className="space-y-3">
-						{[
-							{
-								label: "Cuci Kiloan",
-								data: kiloan,
-							},
-							{
-								label: "Cuci Satuan",
-								data: satuan,
-							},
-						].map(({ label, data }) => {
+			{totalServiceOrders === 0 ? (
+				<p className="text-sm text-muted-foreground text-center py-4">
+					Belum ada data layanan
+				</p>
+			) : (
+				<div className="space-y-3">
+					{services
+						.sort((a, b) => b.revenue - a.revenue)
+						.slice(0, 5)
+						.map((service) => {
 							const pct =
 								totalServiceOrders > 0
-									? ((data?.count ?? 0) / totalServiceOrders) * 100
+									? (service.count / totalServiceOrders) * 100
 									: 0;
 							return (
-								<div key={label}>
+								<div key={service.type}>
 									<div className="flex justify-between text-sm mb-1.5">
-										<span className="font-medium text-foreground">{label}</span>
+										<span className="font-medium text-foreground">
+											{service.type}
+										</span>
 										<span className="text-muted-foreground text-xs">
-											{data?.count ?? 0} pesanan &middot; {pct.toFixed(0)}%
+											{service.count} pesanan &middot; {pct.toFixed(0)}%
 										</span>
 									</div>
 									<div className="h-2.5 w-full rounded-full bg-muted overflow-hidden">
@@ -165,9 +159,9 @@ function AnalyticsPage() {
 								</div>
 							);
 						})}
-					</div>
-				)}
-			</div>
+				</div>
+			)}
+		</div>
 
 			{/* Today Stats */}
 			<div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
