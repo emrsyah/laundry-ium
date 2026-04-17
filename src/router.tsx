@@ -19,7 +19,7 @@ export function getRouter() {
     defaultPreloadStaleTime: 0,
     defaultPendingComponent: () => (
       <div className="flex h-40 items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-[var(--lagoon)] border-t-[var(--lagoon-deep)]" />
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-primary/60" />
       </div>
     ),
 

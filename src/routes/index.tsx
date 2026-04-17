@@ -1,127 +1,212 @@
-import { createFileRoute } from '@tanstack/react-router'
-import { useSuspenseQuery } from '@tanstack/react-query'
-import { useTRPC } from '../integrations/trpc/react'
-import { ShoppingBag, Wallet, PlusCircle, UserPlus, Clock, ChevronRight } from 'lucide-react'
-import { Link } from '@tanstack/react-router'
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import {
+	ChevronRight,
+	Clock,
+	PlusCircle,
+	ShoppingBag,
+	TrendingUp,
+	UserPlus,
+	Wallet,
+} from "lucide-react";
+import { useTRPC } from "../integrations/trpc/react";
 
-export const Route = createFileRoute('/')({
-  component: BerandaPage,
-})
+export const Route = createFileRoute("/")({
+	component: BerandaPage,
+});
+
+function formatRupiah(amount: number) {
+	return new Intl.NumberFormat("id-ID", {
+		style: "currency",
+		currency: "IDR",
+		maximumFractionDigits: 0,
+	}).format(amount);
+}
+
+function formatRupiahCompact(amount: number) {
+	return new Intl.NumberFormat("id-ID", {
+		style: "currency",
+		currency: "IDR",
+		maximumFractionDigits: 0,
+		notation: "compact",
+	}).format(amount);
+}
+
+const STATUS_CONFIG: Record<string, { label: string; className: string }> = {
+	PENDING: {
+		label: "Menunggu",
+		className: "bg-yellow-100 text-yellow-700 border-yellow-200",
+	},
+	DIPROSES: {
+		label: "Diproses",
+		className: "bg-blue-100 text-blue-700 border-blue-200",
+	},
+	SELESAI: {
+		label: "Selesai",
+		className: "bg-green-100 text-green-700 border-green-200",
+	},
+};
 
 function BerandaPage() {
-  const trpc = useTRPC()
-  const { data: summary } = useSuspenseQuery(trpc.analytics.summary.queryOptions())
-  const { data: orders } = useSuspenseQuery(trpc.orders.list.queryOptions())
+	const trpc = useTRPC();
+	const { data: summary } = useSuspenseQuery(
+		trpc.analytics.summary.queryOptions(),
+	);
+	const { data: orders } = useSuspenseQuery(trpc.orders.list.queryOptions());
 
-  const recentOrders = orders?.slice(0, 5) ?? []
+	const recentOrders = orders?.slice(0, 5) ?? [];
 
-  const statusColor: Record<string, string> = {
-    PENDING: 'bg-yellow-100 text-yellow-700',
-    DIPROSES: 'bg-blue-100 text-blue-700',
-    SELESAI: 'bg-green-100 text-green-700',
-  }
+	const pendingCount =
+		orders?.filter((o) => o.status === "PENDING").length ?? 0;
 
-  return (
-    <div className="min-h-screen px-4 py-6 space-y-5">
-      {/* Header Greeting */}
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-xs font-semibold tracking-widest uppercase text-[var(--lagoon-deep)] opacity-80">Selamat Datang 👋</p>
-          <h1 className="text-2xl font-bold text-[var(--sea-ink)] mt-0.5">LaundryKu</h1>
-        </div>
-        <div className="h-10 w-10 rounded-full bg-gradient-to-br from-[var(--lagoon)] to-[var(--palm)] flex items-center justify-center shadow-md">
-          <span className="text-white font-bold text-sm">LK</span>
-        </div>
-      </div>
+	return (
+		<div className="px-4 py-5 space-y-5">
+			{/* Header */}
+			<div className="flex items-center justify-between">
+				<div>
+					<p className="text-sm font-semibold text-primary">Selamat Datang</p>
+					<h1 className="text-2xl font-bold text-foreground mt-0.5">
+						LaundryKu
+					</h1>
+				</div>
+				<div className="h-11 w-11 rounded-full bg-primary flex items-center justify-center shadow-md">
+					<span className="text-primary-foreground font-bold text-sm">LK</span>
+				</div>
+			</div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="stat-card bg-gradient-to-br from-[var(--lagoon-deep)] to-[var(--palm)] rounded-2xl p-4 text-white shadow-lg">
-          <div className="flex items-center gap-2 mb-2 opacity-90">
-            <ShoppingBag className="h-4 w-4" />
-            <span className="text-xs font-semibold">Pesanan Hari Ini</span>
-          </div>
-          <p className="text-3xl font-bold">{summary?.ordersToday ?? 0}</p>
-        </div>
-        <div className="stat-card bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl p-4 text-white shadow-lg">
-          <div className="flex items-center gap-2 mb-2 opacity-90">
-            <Wallet className="h-4 w-4" />
-            <span className="text-xs font-semibold">Pendapatan Hari Ini</span>
-          </div>
-          <p className="text-2xl font-bold">
-            {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(summary?.revenueToday ?? 0)}
-          </p>
-        </div>
-      </div>
+			{/* Summary Cards */}
+			<div className="grid grid-cols-2 gap-3">
+				<div className="rounded-2xl bg-primary p-4 text-primary-foreground shadow-lg">
+					<div className="flex items-center gap-2 mb-1.5">
+						<ShoppingBag className="h-4 w-4" />
+						<span className="text-xs font-semibold opacity-90">
+							Pesanan Hari Ini
+						</span>
+					</div>
+					<p className="text-3xl font-bold leading-tight">
+						{summary?.ordersToday ?? 0}
+					</p>
+					{pendingCount > 0 && (
+						<p className="text-xs opacity-80 mt-1">
+							{pendingCount} menunggu diproses
+						</p>
+					)}
+				</div>
+				<div className="rounded-2xl bg-primary/90 p-4 text-primary-foreground shadow-lg">
+					<div className="flex items-center gap-2 mb-1.5">
+						<Wallet className="h-4 w-4" />
+						<span className="text-xs font-semibold opacity-90">Pendapatan</span>
+					</div>
+					<p className="text-xl font-bold leading-tight">
+						{formatRupiahCompact(summary?.revenueToday ?? 0)}
+					</p>
+					<p className="text-xs opacity-80 mt-1">hari ini</p>
+				</div>
+			</div>
 
-      {/* Quick Actions */}
-      <div>
-        <h2 className="text-sm font-bold text-[var(--sea-ink)] mb-3 uppercase tracking-wider opacity-70">Aksi Cepat</h2>
-        <div className="grid grid-cols-2 gap-3">
-          <Link
-            to="/orders"
-            className="quick-action-btn flex items-center gap-3 rounded-2xl border border-[var(--line)] bg-card p-4 shadow-sm hover:-translate-y-0.5 transition-transform no-underline"
-          >
-            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-[var(--lagoon)] to-[var(--lagoon-deep)] flex items-center justify-center shadow">
-              <PlusCircle className="h-5 w-5 text-white" />
-            </div>
-            <div>
-              <p className="text-xs font-bold text-[var(--sea-ink)]">+ Pesanan</p>
-              <p className="text-[10px] text-[var(--sea-ink-soft)]">Buat baru</p>
-            </div>
-          </Link>
-          <Link
-            to="/customers"
-            className="quick-action-btn flex items-center gap-3 rounded-2xl border border-[var(--line)] bg-card p-4 shadow-sm hover:-translate-y-0.5 transition-transform no-underline"
-          >
-            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center shadow">
-              <UserPlus className="h-5 w-5 text-white" />
-            </div>
-            <div>
-              <p className="text-xs font-bold text-[var(--sea-ink)]">+ Member</p>
-              <p className="text-[10px] text-[var(--sea-ink-soft)]">Tambah pelanggan</p>
-            </div>
-          </Link>
-        </div>
-      </div>
+			{/* Quick Actions */}
+			<div>
+				<h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">
+					Aksi Cepat
+				</h2>
+				<div className="grid grid-cols-2 gap-3">
+					<Link
+						to="/orders"
+						className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4 shadow-sm hover:border-primary/40 transition-colors no-underline"
+					>
+						<div className="h-11 w-11 rounded-xl bg-primary/10 flex items-center justify-center">
+							<PlusCircle className="h-5 w-5 text-primary" />
+						</div>
+						<div>
+							<p className="text-sm font-semibold text-foreground">+ Pesanan</p>
+							<p className="text-xs text-muted-foreground">Buat pesanan baru</p>
+						</div>
+					</Link>
+					<Link
+						to="/customers"
+						className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4 shadow-sm hover:border-primary/40 transition-colors no-underline"
+					>
+						<div className="h-11 w-11 rounded-xl bg-primary/10 flex items-center justify-center">
+							<UserPlus className="h-5 w-5 text-primary" />
+						</div>
+						<div>
+							<p className="text-sm font-semibold text-foreground">
+								+ Pelanggan
+							</p>
+							<p className="text-xs text-muted-foreground">
+								Tambah member baru
+							</p>
+						</div>
+					</Link>
+				</div>
+			</div>
 
-      {/* Recent Activity */}
-      <div>
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-bold text-[var(--sea-ink)] uppercase tracking-wider opacity-70">
-            <Clock className="inline h-4 w-4 mr-1" />
-            Aktivitas Terakhir
-          </h2>
-          <Link to="/orders" className="text-xs text-[var(--lagoon-deep)] font-semibold flex items-center gap-0.5 no-underline">
-            Lihat semua <ChevronRight className="h-3 w-3" />
-          </Link>
-        </div>
+			{/* Recent Orders */}
+			<div>
+				<div className="flex items-center justify-between mb-3">
+					<h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+						<Clock className="h-3.5 w-3.5" />
+						Aktivitas Terakhir
+					</h2>
+					<Link
+						to="/orders"
+						className="text-xs text-primary font-semibold flex items-center gap-0.5 no-underline"
+					>
+						Lihat semua <ChevronRight className="h-3.5 w-3.5" />
+					</Link>
+				</div>
 
-        {recentOrders.length === 0 ? (
-          <div className="rounded-2xl border border-[var(--line)] bg-card p-8 text-center">
-            <ShoppingBag className="h-10 w-10 mx-auto mb-3 text-[var(--lagoon-deep)] opacity-40" />
-            <p className="text-sm text-muted-foreground">Belum ada pesanan hari ini</p>
-            <p className="text-xs text-muted-foreground mt-1">Buat pesanan pertama Anda!</p>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {recentOrders.map((order) => (
-              <div key={order.id} className="flex items-center gap-3 rounded-2xl border border-[var(--line)] bg-card p-3.5 shadow-sm">
-                <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-[var(--lagoon)] to-[var(--lagoon-deep)] flex items-center justify-center flex-shrink-0">
-                  <ShoppingBag className="h-4 w-4 text-white" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-[var(--sea-ink)] truncate">{order.customerName}</p>
-                  <p className="text-xs text-muted-foreground">{order.type} · {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(order.nominal)}</p>
-                </div>
-                <span className={`text-[10px] font-bold px-2 py-1 rounded-full flex-shrink-0 ${statusColor[order.status] ?? ''}`}>
-                  {order.status}
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  )
+				{recentOrders.length === 0 ? (
+					<div className="rounded-2xl border border-border bg-card p-8 text-center">
+						<div className="h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
+							<ShoppingBag className="h-7 w-7 text-primary/50" />
+						</div>
+						<p className="text-sm font-semibold text-foreground">
+							Belum ada pesanan
+						</p>
+						<p className="text-xs text-muted-foreground mt-1">
+							Tekan tombol "+ Pesanan" untuk memulai
+						</p>
+					</div>
+				) : (
+					<div className="space-y-2">
+						{recentOrders.map((order) => {
+							const statusCfg = STATUS_CONFIG[order.status];
+							return (
+								<div
+									key={order.id}
+									className="flex items-center gap-3 rounded-2xl border border-border bg-card p-3.5"
+								>
+									<div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+										{order.status === "SELESAI" ? (
+											<TrendingUp className="h-5 w-5 text-green-600" />
+										) : (
+											<ShoppingBag className="h-5 w-5 text-primary" />
+										)}
+									</div>
+									<div className="flex-1 min-w-0">
+										<p className="text-sm font-semibold text-foreground truncate">
+											{order.customerName}
+										</p>
+										<p className="text-xs text-muted-foreground">
+											{order.type === "kiloan" ? "Cuci Kiloan" : "Cuci Satuan"}{" "}
+											&middot; {formatRupiah(order.nominal)}
+										</p>
+									</div>
+									<span
+										className={[
+											"text-xs font-semibold px-2.5 py-1 rounded-full border shrink-0",
+											statusCfg?.className,
+										].join(" ")}
+									>
+										{statusCfg?.label ?? order.status}
+									</span>
+								</div>
+							);
+						})}
+					</div>
+				)}
+			</div>
+		</div>
+	);
 }
