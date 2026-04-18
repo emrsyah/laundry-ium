@@ -10,7 +10,8 @@ import { BottomNav } from "../components/BottomNav";
 import { Skeleton } from "../components/ui/skeleton";
 import { Toaster } from "../components/ui/sonner";
 import { AnimatePresence, motion } from "framer-motion";
-import { useLocation, useNavigate } from "@tanstack/react-router";
+import { useLocation, useNavigate, redirect } from "@tanstack/react-router";
+import { authClient } from "#/lib/auth-client";
 import appCss from "../styles.css?url";
 
 interface MyRouterContext {
@@ -20,6 +21,14 @@ interface MyRouterContext {
 const THEME_INIT_SCRIPT = `(function(){try{var stored=window.localStorage.getItem('theme');var mode=(stored==='light'||stored==='dark'||stored==='auto')?stored:'auto';var prefersDark=window.matchMedia('(prefers-color-scheme: dark)').matches;var resolved=mode==='auto'?(prefersDark?'dark':'light'):mode;var root=document.documentElement;root.classList.remove('light','dark');root.classList.add(resolved);if(mode==='auto'){root.removeAttribute('data-theme')}else{root.setAttribute('data-theme',mode)}root.style.colorScheme=resolved;}catch(e){}})();`;
 
 export const Route = createRootRouteWithContext<MyRouterContext>()({
+	beforeLoad: async ({ location }) => {
+		if (location.pathname !== '/login' && !location.pathname.startsWith('/track')) {
+			const session = await authClient.getSession();
+			if (!session.data) {
+				throw redirect({ to: '/login' });
+			}
+		}
+	},
 	head: () => ({
 		meta: [
 			{
@@ -142,6 +151,8 @@ function RootComponent() {
 		}
 	};
 
+	const isHideNav = location.pathname === '/login' || location.pathname.startsWith('/track');
+
 	return (
 		<Suspense fallback={<PageFallback />}>
 			<div className="relative h-full w-full">
@@ -159,9 +170,12 @@ function RootComponent() {
 						onDragEnd={handleDragEnd}
 						className="h-full w-full"
 					>
-						<Outlet />
+						<main className={isHideNav ? "h-full" : "pb-[calc(5rem+env(safe-area-inset-bottom))]"} vaul-drawer-wrapper="">
+							<Outlet />
+						</main>
 					</motion.div>
 				</AnimatePresence>
+				{!isHideNav && <BottomNav />}
 			</div>
 		</Suspense>
 	);
@@ -176,8 +190,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 			</head>
 			<body className="font-sans antialiased bg-background text-foreground">
 				<div className="relative mx-auto min-h-screen max-w-md shadow-2xl overflow-hidden bg-background">
-					<main className="pb-[calc(5rem+env(safe-area-inset-bottom))]" vaul-drawer-wrapper="">{children}</main>
-					<BottomNav />
+					{children}
 				</div>
 				<Toaster position="top-center" richColors closeButton />
 				<Scripts />
