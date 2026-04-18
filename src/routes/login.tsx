@@ -9,10 +9,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "#/components/ui/tabs";
 import { User, Lock, Store } from "lucide-react";
 
+import { getAuthSession } from "#/lib/server-fns";
+
 export const Route = createFileRoute("/login")({
   beforeLoad: async () => {
-    const session = await authClient.getSession();
-    if (session.data) {
+    const session = await getAuthSession();
+    if (session && session.session) {
       throw redirect({ to: "/" });
     }
   },

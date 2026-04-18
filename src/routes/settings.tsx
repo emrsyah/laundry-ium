@@ -16,9 +16,11 @@ import {
 	Shirt,
 	Store,
 	Trash2,
+	Lock,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { authClient } from "#/lib/auth-client";
 import {
 	servicesCreate,
 	servicesDelete,
@@ -84,6 +86,42 @@ function SettingsPage() {
 		unit: "",
 		price: "",
 	});
+
+	const [pinForm, setPinForm] = useState({ current: "", new: "", confirm: "" });
+	const [pinLoading, setPinLoading] = useState(false);
+	const [showPinDrawer, setShowPinDrawer] = useState(false);
+
+	async function handleChangePin() {
+		if (!pinForm.current || !pinForm.new || !pinForm.confirm) {
+			toast.error("Lengkapi semua field PIN");
+			return;
+		}
+		if (pinForm.new !== pinForm.confirm) {
+			toast.error("PIN baru dan konfirmasi tidak cocok");
+			return;
+		}
+
+		setPinLoading(true);
+		try {
+			const { error } = await authClient.changePassword({
+				newPassword: pinForm.new,
+				currentPassword: pinForm.current,
+				revokeOtherSessions: true
+			});
+
+			if (error) {
+				toast.error(error.message || "Gagal mengubah PIN");
+			} else {
+				toast.success("PIN berhasil diubah!");
+				setPinForm({ current: "", new: "", confirm: "" });
+				setShowPinDrawer(false);
+			}
+		} catch (err) {
+			toast.error("Terjadi kesalahan sistem");
+		} finally {
+			setPinLoading(false);
+		}
+	}
 
 	useEffect(() => {
 		if (settings) {
@@ -272,6 +310,22 @@ function SettingsPage() {
 						/>
 					</div>
 				</div>
+			</div>
+
+			{/* Security / Admin PIN */}
+			<div className="rounded-2xl border border-border bg-card p-4 shadow-sm flex items-center justify-between">
+				<div className="flex items-center gap-3">
+					<div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
+						<Lock className="h-5 w-5 text-primary" />
+					</div>
+					<div>
+						<h2 className="text-sm font-bold text-foreground">Akses Kasir (PIN)</h2>
+						<p className="text-xs text-muted-foreground mt-0.5">Kelola PIN untuk masuk</p>
+					</div>
+				</div>
+				<Button size="sm" variant="outline" onClick={() => setShowPinDrawer(true)} className="rounded-xl font-semibold px-4">
+					Ubah
+				</Button>
 			</div>
 
 			{/* WhatsApp Settings */}
@@ -572,6 +626,69 @@ function SettingsPage() {
 								) : (
 									"Tambah Layanan"
 								)}
+							</Button>
+						</div>
+					</div>
+				</DrawerContent>
+			</Drawer>
+
+			{/* PIN Drawer */}
+			<Drawer
+				open={showPinDrawer}
+				onOpenChange={(open) => {
+					if (!open) {
+						setShowPinDrawer(false);
+						setPinForm({ current: "", new: "", confirm: "" });
+					}
+				}}
+			>
+				<DrawerContent>
+					<div className="mx-auto w-full max-w-lg flex flex-col max-h-[85dvh]">
+						<DrawerHeader className="text-left px-4 pt-6 shrink-0">
+							<DrawerTitle>Ubah PIN Kasir</DrawerTitle>
+							<DrawerDescription>
+								Masukkan PIN kelola toko Anda yang lama dan baru
+							</DrawerDescription>
+						</DrawerHeader>
+						<div className="space-y-4 px-4 pb-8 pt-2 overflow-y-auto shrink">
+							<div className="space-y-2">
+								<Label className="text-sm font-semibold text-foreground/80">PIN Saat Ini</Label>
+								<Input
+									type="password"
+									placeholder="••••••"
+									value={pinForm.current}
+									onChange={(e) => setPinForm({ ...pinForm, current: e.target.value })}
+									className="h-12 rounded-2xl tracking-[0.4em] text-center text-xl font-bold bg-muted/30 border-muted-foreground/10 focus:border-primary/30 transition-all"
+								/>
+							</div>
+							<div className="grid grid-cols-2 gap-3">
+								<div className="space-y-2">
+									<Label className="text-sm font-semibold text-foreground/80">PIN Baru</Label>
+									<Input
+										type="password"
+										placeholder="••••••"
+										value={pinForm.new}
+										onChange={(e) => setPinForm({ ...pinForm, new: e.target.value })}
+										className="h-12 rounded-2xl tracking-[0.4em] text-center text-xl font-bold bg-muted/30 border-muted-foreground/10 focus:border-primary/30 transition-all"
+									/>
+								</div>
+								<div className="space-y-2">
+									<Label className="text-sm font-semibold text-foreground/80">Konfirmasi</Label>
+									<Input
+										type="password"
+										placeholder="••••••"
+										value={pinForm.confirm}
+										onChange={(e) => setPinForm({ ...pinForm, confirm: e.target.value })}
+										className="h-12 rounded-2xl tracking-[0.4em] text-center text-xl font-bold bg-muted/30 border-muted-foreground/10 focus:border-primary/30 transition-all"
+									/>
+								</div>
+							</div>
+							<Button
+								onClick={handleChangePin}
+								disabled={pinLoading || !pinForm.current || !pinForm.new || !pinForm.confirm}
+								className="w-full h-13 rounded-2xl text-sm font-black shadow-lg shadow-primary/20 mt-4 hover:scale-[1.01] active:scale-[0.98] transition-all"
+							>
+								{pinLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : "Simpan PIN Baru"}
 							</Button>
 						</div>
 					</div>

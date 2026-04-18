@@ -1,4 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
+import { getRequest } from "@tanstack/react-start/server";
+import { auth } from "#/lib/auth";
 import { and, desc, eq, gte, ne, sql } from "drizzle-orm";
 import { db } from "#/db/index";
 import type { OrderStatus, PaymentStatus } from "#/db/schema";
@@ -9,6 +11,14 @@ import {
 	services,
 	storeSettings,
 } from "#/db/schema";
+
+export const getAuthSession = createServerFn({ method: "GET" }).handler(async () => {
+	const req = getRequest();
+	const session = await auth.api.getSession({
+		headers: req?.headers,
+	});
+	return session;
+});
 
 // ── Services Catalog ────────────────────────────────
 

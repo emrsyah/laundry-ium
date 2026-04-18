@@ -11,7 +11,7 @@ import { Skeleton } from "../components/ui/skeleton";
 import { Toaster } from "../components/ui/sonner";
 import { AnimatePresence, motion } from "framer-motion";
 import { useLocation, useNavigate, redirect } from "@tanstack/react-router";
-import { authClient } from "#/lib/auth-client";
+import { getAuthSession } from "#/lib/server-fns";
 import appCss from "../styles.css?url";
 
 interface MyRouterContext {
@@ -23,8 +23,8 @@ const THEME_INIT_SCRIPT = `(function(){try{var stored=window.localStorage.getIte
 export const Route = createRootRouteWithContext<MyRouterContext>()({
 	beforeLoad: async ({ location }) => {
 		if (location.pathname !== '/login' && !location.pathname.startsWith('/track')) {
-			const session = await authClient.getSession();
-			if (!session.data) {
+			const session = await getAuthSession();
+			if (!session || !session.session) {
 				throw redirect({ to: '/login' });
 			}
 		}
