@@ -167,6 +167,52 @@ type OrderItem = {
 	unitPrice: number;
 };
 
+function EstCompletionInput({ value, onChange }: { value: string, onChange: (v: string) => void }) {
+	const [customAmount, setCustomAmount] = useState("1");
+	const [customUnit, setCustomUnit] = useState("days");
+  
+	const setEst = (amount: number, unit: string) => {
+	  const date = new Date();
+	  if (unit === "hours") {
+		date.setHours(date.getHours() + amount);
+	  } else {
+		date.setDate(date.getDate() + amount);
+	  }
+	  const offset = date.getTimezoneOffset() * 60000;
+	  const localISOTime = (new Date(date.getTime() - offset)).toISOString().slice(0, 16);
+	  onChange(localISOTime);
+	};
+  
+  	const displayDate = value 
+		? new Date(value).toLocaleString('id-ID', { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) 
+		: "Belum disetel";
+
+	return (
+	  <div className="space-y-3">
+		 <div className="flex flex-wrap gap-2">
+		   {[{label:"6 Jam", a:6, u:"hours"}, {label:"1 Hari", a:1, u:"days"}, {label:"2 Hari", a:2, u:"days"}, {label:"3 Hari", a:3, u:"days"}].map(qs => (
+			 <button type="button" key={qs.label} onClick={() => setEst(qs.a, qs.u)} className="px-3 py-1.5 text-xs font-semibold rounded-full border border-primary/20 text-primary bg-primary/5 hover:bg-primary/10 transition-all active:scale-95">{qs.label}</button>
+		   ))}
+		 </div>
+		 <div className="flex items-center gap-2">
+		   <Input type="number" min="1" value={customAmount} onChange={e => setCustomAmount(e.target.value)} className="w-20 h-11 text-center font-semibold rounded-xl shadow-sm" />
+		   <Select value={customUnit} onValueChange={setCustomUnit}>
+			 <SelectTrigger className="w-28 h-11 rounded-xl font-medium shadow-sm bg-background/50"><SelectValue /></SelectTrigger>
+			 <SelectContent>
+			   <SelectItem value="hours">Jam</SelectItem>
+			   <SelectItem value="days">Hari</SelectItem>
+			 </SelectContent>
+		   </Select>
+		   <Button type="button" variant="secondary" onClick={() => setEst(Number(customAmount), customUnit)} className="h-11 px-4 font-semibold rounded-xl shadow-sm flex-1">Isi Target</Button>
+		 </div>
+		 <div className="flex items-center gap-3 p-3.5 bg-muted/30 rounded-xl border border-border">
+		   <Clock className="h-5 w-5 text-primary shrink-0" />
+		   <span className="text-sm font-medium text-foreground">{displayDate}</span>
+		 </div>
+	  </div>
+	);
+}
+
 function OrdersPage() {
 	const searchParams = Route.useSearch();
 	const navigate = useNavigate({ from: "/orders" });
@@ -1283,16 +1329,11 @@ function OrdersPage() {
 							</div>
 
 							{/* Estimated Completion */}
-							<div className="space-y-2">
+							<div className="space-y-3 pb-2">
 								<Label className="text-sm font-semibold">
-									Estimasi Selesai
+									Estimasi Selesai (Otomatis & Manual)
 								</Label>
-								<Input
-									type="datetime-local"
-									value={estimatedCompletion}
-									onChange={(e) => setEstimatedCompletion(e.target.value)}
-									className="h-11 rounded-xl"
-								/>
+								<EstCompletionInput value={estimatedCompletion} onChange={setEstimatedCompletion} />
 							</div>
 
 							{/* Submit */}
@@ -1503,16 +1544,11 @@ function OrdersPage() {
 							</div>
 
 							{/* Estimated Completion */}
-							<div className="space-y-2">
+							<div className="space-y-3 pb-2">
 								<Label className="text-sm font-semibold">
-									Estimasi Selesai
+									Estimasi Selesai (Otomatis & Manual)
 								</Label>
-								<Input
-									type="datetime-local"
-									value={editEstimatedCompletion}
-									onChange={(e) => setEditEstimatedCompletion(e.target.value)}
-									className="h-11 rounded-xl"
-								/>
+								<EstCompletionInput value={editEstimatedCompletion} onChange={setEditEstimatedCompletion} />
 							</div>
 
 							{/* Submit */}
