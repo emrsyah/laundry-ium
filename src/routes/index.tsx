@@ -9,10 +9,7 @@ import {
 	UserPlus,
 	Wallet,
 } from "lucide-react";
-import {
-	analyticsSummary,
-	ordersList,
-} from "#/lib/server-fns";
+import { analyticsSummary, ordersList } from "#/lib/server-fns";
 
 export const Route = createFileRoute("/")({
 	component: BerandaPage,
@@ -56,9 +53,8 @@ export const ordersListQueryOptions = queryOptions({
 function BerandaPage() {
 	const { data: summary } = useSuspenseQuery(analyticsSummaryQueryOptions);
 	const { data: orders } = useSuspenseQuery(ordersListQueryOptions);
-	const recentOrders = orders
-		?.filter((o) => o.status !== "BATAL")
-		.slice(0, 5) ?? [];
+	const recentOrders =
+		orders?.filter((o) => o.status !== "BATAL").slice(0, 5) ?? [];
 
 	const pendingCount =
 		orders?.filter((o) => o.status === "PENDING").length ?? 0;
@@ -79,48 +75,50 @@ function BerandaPage() {
 			</div>
 
 			{/* Summary Cards */}
-		<div className="space-y-3">
-			<div className="grid grid-cols-2 gap-3">
-				<div className="rounded-2xl bg-primary p-4 text-primary-foreground shadow-lg">
+			<div className="space-y-3">
+				<div className="grid grid-cols-2 gap-3">
+					<div className="rounded-2xl bg-primary p-4 text-primary-foreground shadow-lg">
+						<div className="flex items-center gap-2 mb-1.5">
+							<ShoppingBag className="h-4 w-4" />
+							<span className="text-xs font-semibold opacity-90">
+								Pesanan Hari Ini
+							</span>
+						</div>
+						<p className="text-3xl font-bold leading-tight">
+							{summary?.ordersToday ?? 0}
+						</p>
+						{pendingCount > 0 && (
+							<p className="text-xs opacity-80 mt-1">
+								{pendingCount} menunggu diproses
+							</p>
+						)}
+					</div>
+					<div className="rounded-2xl bg-primary/90 p-4 text-primary-foreground shadow-lg">
+						<div className="flex items-center gap-2 mb-1.5">
+							<Wallet className="h-4 w-4" />
+							<span className="text-xs font-semibold opacity-90">
+								Pendapatan
+							</span>
+						</div>
+						<p className="text-xl font-bold leading-tight">
+							{formatRupiahCompact(summary?.revenueToday ?? 0)}
+						</p>
+						<p className="text-xs opacity-80 mt-1">hari ini</p>
+					</div>
+				</div>
+				<div className="rounded-2xl border-2 border-red-200 bg-red-50 p-4 shadow-sm">
 					<div className="flex items-center gap-2 mb-1.5">
-						<ShoppingBag className="h-4 w-4" />
-						<span className="text-xs font-semibold opacity-90">
-							Pesanan Hari Ini
+						<Wallet className="h-4 w-4 text-red-600" />
+						<span className="text-xs font-semibold text-red-700">
+							Belum Bayar
 						</span>
 					</div>
-					<p className="text-3xl font-bold leading-tight">
-						{summary?.ordersToday ?? 0}
+					<p className="text-2xl font-bold text-red-700 leading-tight">
+						{formatRupiahCompact(summary?.unpaidToday ?? 0)}
 					</p>
-					{pendingCount > 0 && (
-						<p className="text-xs opacity-80 mt-1">
-							{pendingCount} menunggu diproses
-						</p>
-					)}
-				</div>
-				<div className="rounded-2xl bg-primary/90 p-4 text-primary-foreground shadow-lg">
-					<div className="flex items-center gap-2 mb-1.5">
-						<Wallet className="h-4 w-4" />
-						<span className="text-xs font-semibold opacity-90">Pendapatan</span>
-					</div>
-					<p className="text-xl font-bold leading-tight">
-						{formatRupiahCompact(summary?.revenueToday ?? 0)}
-					</p>
-					<p className="text-xs opacity-80 mt-1">hari ini</p>
+					<p className="text-xs text-red-600 opacity-80 mt-1">hari ini</p>
 				</div>
 			</div>
-			<div className="rounded-2xl border-2 border-red-200 bg-red-50 p-4 shadow-sm">
-				<div className="flex items-center gap-2 mb-1.5">
-					<Wallet className="h-4 w-4 text-red-600" />
-					<span className="text-xs font-semibold text-red-700">
-						Belum Bayar
-					</span>
-				</div>
-				<p className="text-2xl font-bold text-red-700 leading-tight">
-					{formatRupiahCompact(summary?.unpaidToday ?? 0)}
-				</p>
-				<p className="text-xs text-red-600 opacity-80 mt-1">hari ini</p>
-			</div>
-		</div>
 
 			{/* Quick Actions */}
 			<div>
@@ -130,7 +128,7 @@ function BerandaPage() {
 				<div className="grid grid-cols-2 gap-3">
 					<Link
 						to="/orders"
-						className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4 shadow-sm hover:border-primary/40 transition-colors no-underline"
+						className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4 shadow-sm hover:border-primary/40 active:scale-[0.97] transition-all no-underline touch-press"
 					>
 						<div className="h-11 w-11 rounded-xl bg-primary/10 flex items-center justify-center">
 							<PlusCircle className="h-5 w-5 text-primary" />
@@ -142,7 +140,7 @@ function BerandaPage() {
 					</Link>
 					<Link
 						to="/customers"
-						className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4 shadow-sm hover:border-primary/40 transition-colors no-underline"
+						className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4 shadow-sm hover:border-primary/40 active:scale-[0.97] transition-all no-underline touch-press"
 					>
 						<div className="h-11 w-11 rounded-xl bg-primary/10 flex items-center justify-center">
 							<UserPlus className="h-5 w-5 text-primary" />
@@ -195,7 +193,7 @@ function BerandaPage() {
 									to="/orders"
 									search={{ viewItem: order.id }}
 									key={order.id}
-									className="flex items-center gap-3 rounded-2xl border border-border bg-card p-3.5 no-underline transition-colors hover:border-primary/40"
+									className="flex items-center gap-3 rounded-2xl border border-border bg-card p-3.5 no-underline transition-all hover:border-primary/40 active:scale-[0.97] touch-press"
 								>
 									<div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
 										{order.status === "SELESAI" ? (
@@ -210,8 +208,8 @@ function BerandaPage() {
 										</p>
 										<p className="text-xs text-muted-foreground">
 											{order.notes?.slice(0, 30) || "Catatan kosong"}
-											{order.notes && order.notes.length > 30 ? "..." : ""} &middot;{" "}
-											{formatRupiah(order.nominal)}
+											{order.notes && order.notes.length > 30 ? "..." : ""}{" "}
+											&middot; {formatRupiah(order.nominal)}
 										</p>
 									</div>
 									<span

@@ -5,10 +5,12 @@ import {
 	useSuspenseQuery,
 } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
+import { motion } from "framer-motion";
 import {
 	Check,
 	CreditCard,
 	Loader2,
+	Lock,
 	MessageSquare,
 	Pencil,
 	Plus,
@@ -16,11 +18,11 @@ import {
 	Shirt,
 	Store,
 	Trash2,
-	Lock,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { authClient } from "#/lib/auth-client";
+import { haptic } from "#/lib/haptic";
 import {
 	servicesCreate,
 	servicesDelete,
@@ -106,7 +108,7 @@ function SettingsPage() {
 			const { error } = await authClient.changePassword({
 				newPassword: pinForm.new,
 				currentPassword: pinForm.current,
-				revokeOtherSessions: true
+				revokeOtherSessions: true,
 			});
 
 			if (error) {
@@ -149,10 +151,14 @@ function SettingsPage() {
 		onSuccess: () => {
 			queryClient.invalidateQueries(settingsGetQueryOptions);
 			setSaved(true);
+			haptic("success");
 			toast.success("Pengaturan berhasil disimpan!");
 			setTimeout(() => setSaved(false), 2500);
 		},
-		onError: () => toast.error("Gagal menyimpan pengaturan. Coba lagi."),
+		onError: () => {
+			haptic("error");
+			toast.error("Gagal menyimpan pengaturan. Coba lagi.");
+		},
 	});
 
 	const serviceCreateMutation = useMutation({
@@ -165,9 +171,13 @@ function SettingsPage() {
 		onSuccess: () => {
 			queryClient.invalidateQueries(servicesListQueryOptions);
 			resetServiceForm();
+			haptic("success");
 			toast.success("Layanan berhasil ditambahkan");
 		},
-		onError: () => toast.error("Gagal menambah layanan. Coba lagi."),
+		onError: () => {
+			haptic("error");
+			toast.error("Gagal menambah layanan. Coba lagi.");
+		},
 	});
 
 	const serviceUpdateMutation = useMutation({
@@ -181,18 +191,26 @@ function SettingsPage() {
 		onSuccess: () => {
 			queryClient.invalidateQueries(servicesListQueryOptions);
 			setShowServiceDrawer(false);
+			haptic("success");
 			toast.success("Layanan berhasil diperbarui");
 		},
-		onError: () => toast.error("Gagal memperbarui layanan. Coba lagi."),
+		onError: () => {
+			haptic("error");
+			toast.error("Gagal memperbarui layanan. Coba lagi.");
+		},
 	});
 
 	const serviceDeleteMutation = useMutation({
 		mutationFn: (data: { id: number }) => servicesDelete({ data }),
 		onSuccess: () => {
 			queryClient.invalidateQueries(servicesListQueryOptions);
+			haptic("success");
 			toast.success("Layanan berhasil dihapus");
 		},
-		onError: () => toast.error("Gagal menghapus layanan. Coba lagi."),
+		onError: () => {
+			haptic("error");
+			toast.error("Gagal menghapus layanan. Coba lagi.");
+		},
 	});
 
 	function resetServiceForm() {
@@ -319,11 +337,20 @@ function SettingsPage() {
 						<Lock className="h-5 w-5 text-primary" />
 					</div>
 					<div>
-						<h2 className="text-sm font-bold text-foreground">Akses Kasir (PIN)</h2>
-						<p className="text-xs text-muted-foreground mt-0.5">Kelola PIN untuk masuk</p>
+						<h2 className="text-sm font-bold text-foreground">
+							Akses Kasir (PIN)
+						</h2>
+						<p className="text-xs text-muted-foreground mt-0.5">
+							Kelola PIN untuk masuk
+						</p>
 					</div>
 				</div>
-				<Button size="sm" variant="outline" onClick={() => setShowPinDrawer(true)} className="rounded-xl font-semibold px-4">
+				<Button
+					size="sm"
+					variant="outline"
+					onClick={() => setShowPinDrawer(true)}
+					className="rounded-xl font-semibold px-4"
+				>
 					Ubah
 				</Button>
 			</div>
@@ -347,21 +374,19 @@ function SettingsPage() {
 					</div>
 					<button
 						type="button"
-						onClick={() =>
-							setForm({ ...form, autoWaEnabled: !form.autoWaEnabled })
-						}
+						onClick={() => {
+							haptic("light");
+							setForm({ ...form, autoWaEnabled: !form.autoWaEnabled });
+						}}
 						className={[
 							"relative h-7 w-12 rounded-full transition-colors shrink-0",
 							form.autoWaEnabled ? "bg-primary" : "bg-muted",
 						].join(" ")}
 					>
-						<span
-							className={[
-								"absolute top-0.5 h-6 w-6 rounded-full bg-white shadow-sm transition-transform",
-								form.autoWaEnabled
-									? "translate-x-5.5 left-0"
-									: "translate-x-0.5 left-0",
-							].join(" ")}
+						<motion.span
+							className="absolute top-0.5 h-6 w-6 rounded-full bg-white shadow-sm"
+							animate={{ x: form.autoWaEnabled ? 22 : 2 }}
+							transition={{ type: "spring", stiffness: 500, damping: 30 }}
 						/>
 					</button>
 				</div>
@@ -466,7 +491,7 @@ function SettingsPage() {
 									<button
 										type="button"
 										onClick={() => openServiceDrawer(service)}
-										className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+										className="h-9 w-9 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted active:bg-primary/10 transition-colors touch-press"
 									>
 										<Pencil className="h-3.5 w-3.5" />
 									</button>
@@ -475,7 +500,7 @@ function SettingsPage() {
 										onClick={() =>
 											handleServiceDelete(service.id, service.name)
 										}
-										className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+										className="h-9 w-9 rounded-lg flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 active:bg-destructive/20 transition-colors touch-press"
 									>
 										<Trash2 className="h-3.5 w-3.5" />
 									</button>
@@ -652,43 +677,64 @@ function SettingsPage() {
 						</DrawerHeader>
 						<div className="space-y-4 px-4 pb-8 pt-2 overflow-y-auto shrink">
 							<div className="space-y-2">
-								<Label className="text-sm font-semibold text-foreground/80">PIN Saat Ini</Label>
+								<Label className="text-sm font-semibold text-foreground/80">
+									PIN Saat Ini
+								</Label>
 								<Input
 									type="password"
 									placeholder="••••••"
 									value={pinForm.current}
-									onChange={(e) => setPinForm({ ...pinForm, current: e.target.value })}
+									onChange={(e) =>
+										setPinForm({ ...pinForm, current: e.target.value })
+									}
 									className="h-12 rounded-2xl tracking-[0.4em] text-center text-xl font-bold bg-muted/30 border-muted-foreground/10 focus:border-primary/30 transition-all"
 								/>
 							</div>
 							<div className="grid grid-cols-2 gap-3">
 								<div className="space-y-2">
-									<Label className="text-sm font-semibold text-foreground/80">PIN Baru</Label>
+									<Label className="text-sm font-semibold text-foreground/80">
+										PIN Baru
+									</Label>
 									<Input
 										type="password"
 										placeholder="••••••"
 										value={pinForm.new}
-										onChange={(e) => setPinForm({ ...pinForm, new: e.target.value })}
+										onChange={(e) =>
+											setPinForm({ ...pinForm, new: e.target.value })
+										}
 										className="h-12 rounded-2xl tracking-[0.4em] text-center text-xl font-bold bg-muted/30 border-muted-foreground/10 focus:border-primary/30 transition-all"
 									/>
 								</div>
 								<div className="space-y-2">
-									<Label className="text-sm font-semibold text-foreground/80">Konfirmasi</Label>
+									<Label className="text-sm font-semibold text-foreground/80">
+										Konfirmasi
+									</Label>
 									<Input
 										type="password"
 										placeholder="••••••"
 										value={pinForm.confirm}
-										onChange={(e) => setPinForm({ ...pinForm, confirm: e.target.value })}
+										onChange={(e) =>
+											setPinForm({ ...pinForm, confirm: e.target.value })
+										}
 										className="h-12 rounded-2xl tracking-[0.4em] text-center text-xl font-bold bg-muted/30 border-muted-foreground/10 focus:border-primary/30 transition-all"
 									/>
 								</div>
 							</div>
 							<Button
 								onClick={handleChangePin}
-								disabled={pinLoading || !pinForm.current || !pinForm.new || !pinForm.confirm}
+								disabled={
+									pinLoading ||
+									!pinForm.current ||
+									!pinForm.new ||
+									!pinForm.confirm
+								}
 								className="w-full h-13 rounded-2xl text-sm font-black shadow-lg shadow-primary/20 mt-4 hover:scale-[1.01] active:scale-[0.98] transition-all"
 							>
-								{pinLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : "Simpan PIN Baru"}
+								{pinLoading ? (
+									<Loader2 className="h-4 w-4 animate-spin mr-2" />
+								) : (
+									"Simpan PIN Baru"
+								)}
 							</Button>
 						</div>
 					</div>

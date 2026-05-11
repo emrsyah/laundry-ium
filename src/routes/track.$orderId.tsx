@@ -1,21 +1,20 @@
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { formatRupiah, formatDate } from "#/lib/utils";
+import { motion } from "framer-motion";
 import {
 	CheckCircle2,
-	Clock,
+	CreditCard,
 	Loader2,
 	PackageSearch,
-	MapPin,
-	CreditCard,
 	Receipt,
 } from "lucide-react";
-import { ordersGet, settingsGet } from "#/lib/server-fns";
-import { Skeleton } from "../components/ui/skeleton";
-import { ReceiptTemplate } from "../components/ReceiptTemplate";
-import { generateReceiptPDF } from "#/lib/pdf-utils";
-import { useState, useRef } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
+import { generateReceiptPDF } from "#/lib/pdf-utils";
+import { ordersGet, settingsGet } from "#/lib/server-fns";
+import { formatDate, formatRupiah } from "#/lib/utils";
+import { ReceiptTemplate } from "../components/ReceiptTemplate";
+import { Skeleton } from "../components/ui/skeleton";
 
 export const Route = createFileRoute("/track/$orderId")({
 	loader: ({ params }) => {
@@ -33,7 +32,9 @@ export const Route = createFileRoute("/track/$orderId")({
 	errorComponent: () => (
 		<div className="min-h-screen flex flex-col items-center justify-center p-6 bg-slate-50 dark:bg-slate-950 text-center">
 			<PackageSearch className="h-16 w-16 text-muted-foreground mb-4" />
-			<h2 className="text-xl font-bold mb-2 text-foreground">Pesanan Tidak Ditemukan</h2>
+			<h2 className="text-xl font-bold mb-2 text-foreground">
+				Pesanan Tidak Ditemukan
+			</h2>
 			<p className="text-muted-foreground">
 				Tautan ini salah atau pesanan Anda mungkin sudah dihapus.
 			</p>
@@ -52,13 +53,34 @@ export const settingsQueryOptions = queryOptions({
 	queryFn: () => settingsGet(),
 });
 
-const STATUS_MAP: Record<string, { label: string; bg: string; text: string }> = {
-	PENDING: { label: "Menunggu", bg: "bg-yellow-100 dark:bg-yellow-500/10", text: "text-yellow-700 dark:text-yellow-500" },
-	DIPROSES: { label: "Sedang Diproses", bg: "bg-blue-100 dark:bg-blue-500/10", text: "text-blue-700 dark:text-blue-500" },
-	SELESAI: { label: "Selesai", bg: "bg-green-100 dark:bg-green-500/10", text: "text-green-700 dark:text-green-500" },
-	DIAMBIL: { label: "Sudah Diambil", bg: "bg-indigo-100 dark:bg-indigo-500/10", text: "text-indigo-700 dark:text-indigo-400" },
-	BATAL: { label: "Dibatalkan", bg: "bg-gray-100 dark:bg-slate-800", text: "text-gray-500 dark:text-slate-400" },
-};
+const STATUS_MAP: Record<string, { label: string; bg: string; text: string }> =
+	{
+		PENDING: {
+			label: "Menunggu",
+			bg: "bg-yellow-100 dark:bg-yellow-500/10",
+			text: "text-yellow-700 dark:text-yellow-500",
+		},
+		DIPROSES: {
+			label: "Sedang Diproses",
+			bg: "bg-blue-100 dark:bg-blue-500/10",
+			text: "text-blue-700 dark:text-blue-500",
+		},
+		SELESAI: {
+			label: "Selesai",
+			bg: "bg-green-100 dark:bg-green-500/10",
+			text: "text-green-700 dark:text-green-500",
+		},
+		DIAMBIL: {
+			label: "Sudah Diambil",
+			bg: "bg-indigo-100 dark:bg-indigo-500/10",
+			text: "text-indigo-700 dark:text-indigo-400",
+		},
+		BATAL: {
+			label: "Dibatalkan",
+			bg: "bg-gray-100 dark:bg-slate-800",
+			text: "text-gray-500 dark:text-slate-400",
+		},
+	};
 
 function OrderTrackingPage() {
 	const { id } = Route.useLoaderData();
@@ -85,7 +107,9 @@ function OrderTrackingPage() {
 		return (
 			<div className="min-h-screen flex flex-col items-center justify-center p-6 bg-slate-50 dark:bg-slate-950 text-center">
 				<PackageSearch className="h-16 w-16 text-muted-foreground mb-4 opacity-50" />
-				<h2 className="text-xl font-bold mb-2 text-foreground">Tidak Ditemukan</h2>
+				<h2 className="text-xl font-bold mb-2 text-foreground">
+					Tidak Ditemukan
+				</h2>
 				<p className="text-muted-foreground">
 					Data pesanan tidak ditemukan di sistem.
 				</p>
@@ -105,7 +129,17 @@ function OrderTrackingPage() {
 
 			{/* Main Card */}
 			<div className="w-full max-w-md px-4 -mt-10 mb-8">
-				<div className="bg-white dark:bg-slate-900 rounded-3xl shadow-xl shadow-slate-200/50 dark:shadow-none p-6 space-y-6 border border-slate-100 dark:border-slate-800">
+				<motion.div
+					initial={{ opacity: 0, y: 20, scale: 0.96 }}
+					animate={{ opacity: 1, y: 0, scale: 1 }}
+					transition={{
+						type: "spring",
+						stiffness: 200,
+						damping: 20,
+						delay: 0.1,
+					}}
+					className="bg-white dark:bg-slate-900 rounded-3xl shadow-xl shadow-slate-200/50 dark:shadow-none p-6 space-y-6 border border-slate-100 dark:border-slate-800"
+				>
 					{/* Status Hero */}
 					<div className="text-center space-y-3">
 						<div
@@ -114,7 +148,9 @@ function OrderTrackingPage() {
 							{statusInfo.label}
 						</div>
 						<h2 className="text-3xl font-black tracking-tight flex items-center justify-center text-foreground">
-							<span className="text-muted-foreground font-medium text-lg mr-2 uppercase">#</span>
+							<span className="text-muted-foreground font-medium text-lg mr-2 uppercase">
+								#
+							</span>
 							{order.id.toString().padStart(4, "0")}
 						</h2>
 					</div>
@@ -149,7 +185,10 @@ function OrderTrackingPage() {
 						</p>
 						<div className="space-y-2">
 							{order.items.map((item) => (
-								<div key={item.id} className="flex justify-between items-start text-sm">
+								<div
+									key={item.id}
+									className="flex justify-between items-start text-sm"
+								>
 									<div className="font-medium text-slate-600 dark:text-slate-400">
 										{item.serviceName}
 										<span className="text-xs text-muted-foreground block mt-0.5">
@@ -162,11 +201,13 @@ function OrderTrackingPage() {
 								</div>
 							))}
 						</div>
-						
+
 						<div className="h-px w-full bg-slate-200 dark:bg-slate-700 my-2" />
-						
+
 						<div className="flex justify-between items-center pt-1">
-							<span className="font-bold text-slate-800 dark:text-slate-200">Total Tagihan</span>
+							<span className="font-bold text-slate-800 dark:text-slate-200">
+								Total Tagihan
+							</span>
 							<span className="text-lg font-black text-primary">
 								{formatRupiah(order.nominal)}
 							</span>
@@ -187,7 +228,9 @@ function OrderTrackingPage() {
 									<CheckCircle2 className="w-4 h-4" /> LUNAS
 								</p>
 							) : (
-								<p className="text-sm font-bold text-amber-600 dark:text-amber-500">BELUM LUNAS</p>
+								<p className="text-sm font-bold text-amber-600 dark:text-amber-500">
+									BELUM LUNAS
+								</p>
 							)}
 						</div>
 					</div>
@@ -206,16 +249,19 @@ function OrderTrackingPage() {
 						)}
 						Unduh Struk (PDF)
 					</button>
+				</motion.div>
 
-				</div>
-				
 				<p className="text-xs text-center text-muted-foreground mt-8 mb-4">
 					Terima kasih telah mempercayakan pakaian Anda di LaundryKu.
 				</p>
 			</div>
 
 			{/* Hidden Receipt Template for PDF Generation */}
-			<div className="absolute opacity-0 pointer-events-none -z-50" aria-hidden="true" ref={receiptRef}>
+			<div
+				className="absolute opacity-0 pointer-events-none -z-50"
+				aria-hidden="true"
+				ref={receiptRef}
+			>
 				{order && settings && (
 					<ReceiptTemplate
 						order={{

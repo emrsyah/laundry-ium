@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { haptic } from "#/lib/haptic";
 import {
 	customersCreate,
 	customersDelete,
@@ -58,6 +59,7 @@ function CustomersListPage() {
 	const [editingId, setEditingId] = useState<number | null>(null);
 	const [form, setForm] = useState({ name: "", phone: "", address: "" });
 	const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+	const [formShaking, setFormShaking] = useState(false);
 
 	const createMutation = useMutation({
 		mutationFn: (data: { name: string; phone: string; address?: string }) =>
@@ -67,9 +69,11 @@ function CustomersListPage() {
 			setShowForm(false);
 			setForm({ name: "", phone: "", address: "" });
 			setFormErrors({});
+			haptic("success");
 			toast.success(`Pelanggan "${data.name}" berhasil ditambahkan`);
 		},
 		onError: () => {
+			haptic("error");
 			toast.error("Gagal menambah pelanggan. Coba lagi.");
 		},
 	});
@@ -88,9 +92,11 @@ function CustomersListPage() {
 			setFormErrors({});
 			setEditingId(null);
 			setFormMode("create");
+			haptic("success");
 			toast.success(`Pelanggan "${data.name}" berhasil diperbarui`);
 		},
 		onError: () => {
+			haptic("error");
 			toast.error("Gagal memperbarui pelanggan. Coba lagi.");
 		},
 	});
@@ -99,9 +105,11 @@ function CustomersListPage() {
 		mutationFn: (id: number) => customersDelete({ data: { id } }),
 		onSuccess: () => {
 			queryClient.invalidateQueries(customersListQueryOptions);
+			haptic("success");
 			toast.success("Pelanggan berhasil dihapus");
 		},
 		onError: () => {
+			haptic("error");
 			toast.error("Gagal menghapus pelanggan. Coba lagi.");
 		},
 	});
@@ -125,6 +133,12 @@ function CustomersListPage() {
 		}
 
 		setFormErrors(errors);
+		if (Object.keys(errors).length > 0) {
+			setFormShaking(true);
+			haptic("error");
+			setTimeout(() => setFormShaking(false), 500);
+			return;
+		}
 		if (Object.keys(errors).length > 0) return;
 
 		if (formMode === "create") {
@@ -229,14 +243,14 @@ function CustomersListPage() {
 					filtered.map((customer) => (
 						<div
 							key={customer.id}
-							className="rounded-2xl border border-border bg-card p-4 shadow-sm hover:border-primary/40 transition-colors group relative"
+							className="rounded-2xl border border-border bg-card p-4 shadow-sm active:border-primary/40 transition-all touch-press group relative"
 						>
-							{/* Action buttons - visible on hover */}
-							<div className="absolute top-3 right-3 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+							{/* Action buttons - always visible on touch */}
+							<div className="absolute top-3 right-3 flex gap-1.5 transition-opacity opacity-60 active:opacity-100">
 								<Button
 									variant="ghost"
 									size="icon"
-									className="h-8 w-8 rounded-full hover:bg-primary/10"
+									className="h-9 w-9 rounded-full hover:bg-primary/10 active:bg-primary/20"
 									onClick={(e) => {
 										e.preventDefault();
 										e.stopPropagation();
@@ -248,7 +262,7 @@ function CustomersListPage() {
 								<Button
 									variant="ghost"
 									size="icon"
-									className="h-8 w-8 rounded-full hover:bg-destructive/10"
+									className="h-9 w-9 rounded-full hover:bg-destructive/10 active:bg-destructive/20"
 									onClick={(e) => {
 										e.preventDefault();
 										e.stopPropagation();
@@ -262,7 +276,7 @@ function CustomersListPage() {
 							<Link
 								to="/customers/$customerId"
 								params={{ customerId: String(customer.id) }}
-								className="block no-underline"
+								className="block no-underline active:scale-[0.98] transition-transform"
 							>
 								<div className="flex items-start gap-3">
 									<div className="h-12 w-12 rounded-xl bg-primary flex items-center justify-center shrink-0 shadow group-hover:scale-105 transition-transform">
@@ -365,7 +379,12 @@ function CustomersListPage() {
 							</DrawerDescription>
 						</DrawerHeader>
 
-						<div className="space-y-4 px-4 pb-8 pt-2 overflow-y-auto shrink">
+						<div
+							className={[
+								"space-y-4 px-4 pb-8 pt-2 overflow-y-auto shrink",
+								formShaking ? "animate-shake" : "",
+							].join(" ")}
+						>
 							<div className="space-y-2">
 								<Label
 									htmlFor="customer-name"

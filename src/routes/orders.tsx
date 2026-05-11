@@ -15,16 +15,20 @@ import {
 	Minus,
 	Package,
 	Plus,
+	QrCode,
+	Receipt,
 	Search,
+	Share2,
 	ShoppingBag,
 	Trash2,
 	X,
-	Share2,
-	QrCode,
-	Receipt,
 } from "lucide-react";
-import { useEffect, useState, useRef } from "react";
+import { QRCodeSVG } from "qrcode.react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { z } from "zod";
+import { haptic } from "#/lib/haptic";
+import { generateReceiptPDF } from "#/lib/pdf-utils";
 import {
 	analyticsSummary,
 	customersCreate,
@@ -37,17 +41,9 @@ import {
 	servicesList,
 	settingsGet,
 } from "#/lib/server-fns";
-import { ReceiptTemplate } from "../components/ReceiptTemplate";
-import { generateReceiptPDF } from "#/lib/pdf-utils";
 import { formatDate, formatRupiah } from "#/lib/utils";
+import { ReceiptTemplate } from "../components/ReceiptTemplate";
 import { Button } from "../components/ui/button";
-import {
-	Drawer,
-	DrawerContent,
-	DrawerDescription,
-	DrawerHeader,
-	DrawerTitle,
-} from "../components/ui/drawer";
 import {
 	Dialog,
 	DialogContent,
@@ -55,7 +51,13 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "../components/ui/dialog";
-import { QRCodeSVG } from "qrcode.react";
+import {
+	Drawer,
+	DrawerContent,
+	DrawerDescription,
+	DrawerHeader,
+	DrawerTitle,
+} from "../components/ui/drawer";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import {
@@ -65,9 +67,8 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "../components/ui/select";
-import { Textarea } from "../components/ui/textarea";
 import { Skeleton } from "../components/ui/skeleton";
-import { z } from "zod";
+import { Textarea } from "../components/ui/textarea";
 
 export const Route = createFileRoute("/orders")({
 	component: OrdersPage,
@@ -167,49 +168,93 @@ type OrderItem = {
 	unitPrice: number;
 };
 
-function EstCompletionInput({ value, onChange }: { value: string, onChange: (v: string) => void }) {
+function EstCompletionInput({
+	value,
+	onChange,
+}: {
+	value: string;
+	onChange: (v: string) => void;
+}) {
 	const [customAmount, setCustomAmount] = useState("1");
 	const [customUnit, setCustomUnit] = useState("days");
-  
+
 	const setEst = (amount: number, unit: string) => {
-	  const date = new Date();
-	  if (unit === "hours") {
-		date.setHours(date.getHours() + amount);
-	  } else {
-		date.setDate(date.getDate() + amount);
-	  }
-	  const offset = date.getTimezoneOffset() * 60000;
-	  const localISOTime = (new Date(date.getTime() - offset)).toISOString().slice(0, 16);
-	  onChange(localISOTime);
+		const date = new Date();
+		if (unit === "hours") {
+			date.setHours(date.getHours() + amount);
+		} else {
+			date.setDate(date.getDate() + amount);
+		}
+		const offset = date.getTimezoneOffset() * 60000;
+		const localISOTime = new Date(date.getTime() - offset)
+			.toISOString()
+			.slice(0, 16);
+		onChange(localISOTime);
 	};
-  
-  	const displayDate = value 
-		? new Date(value).toLocaleString('id-ID', { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) 
+
+	const displayDate = value
+		? new Date(value).toLocaleString("id-ID", {
+				weekday: "long",
+				year: "numeric",
+				month: "short",
+				day: "numeric",
+				hour: "2-digit",
+				minute: "2-digit",
+			})
 		: "Belum disetel";
 
 	return (
-	  <div className="space-y-3">
-		 <div className="flex flex-wrap gap-2">
-		   {[{label:"6 Jam", a:6, u:"hours"}, {label:"1 Hari", a:1, u:"days"}, {label:"2 Hari", a:2, u:"days"}, {label:"3 Hari", a:3, u:"days"}].map(qs => (
-			 <button type="button" key={qs.label} onClick={() => setEst(qs.a, qs.u)} className="px-3 py-1.5 text-xs font-semibold rounded-full border border-primary/20 text-primary bg-primary/5 hover:bg-primary/10 transition-all active:scale-95">{qs.label}</button>
-		   ))}
-		 </div>
-		 <div className="flex items-center gap-2">
-		   <Input type="number" min="1" value={customAmount} onChange={e => setCustomAmount(e.target.value)} className="w-20 h-11 text-center font-semibold rounded-xl shadow-sm" />
-		   <Select value={customUnit} onValueChange={setCustomUnit}>
-			 <SelectTrigger className="w-28 h-11 rounded-xl font-medium shadow-sm bg-background/50"><SelectValue /></SelectTrigger>
-			 <SelectContent>
-			   <SelectItem value="hours">Jam</SelectItem>
-			   <SelectItem value="days">Hari</SelectItem>
-			 </SelectContent>
-		   </Select>
-		   <Button type="button" variant="secondary" onClick={() => setEst(Number(customAmount), customUnit)} className="h-11 px-4 font-semibold rounded-xl shadow-sm flex-1">Isi Target</Button>
-		 </div>
-		 <div className="flex items-center gap-3 p-3.5 bg-muted/30 rounded-xl border border-border">
-		   <Clock className="h-5 w-5 text-primary shrink-0" />
-		   <span className="text-sm font-medium text-foreground">{displayDate}</span>
-		 </div>
-	  </div>
+		<div className="space-y-3">
+			<div className="flex flex-wrap gap-2">
+				{[
+					{ label: "6 Jam", a: 6, u: "hours" },
+					{ label: "1 Hari", a: 1, u: "days" },
+					{ label: "2 Hari", a: 2, u: "days" },
+					{ label: "3 Hari", a: 3, u: "days" },
+				].map((qs) => (
+					<button
+						type="button"
+						key={qs.label}
+						onClick={() => setEst(qs.a, qs.u)}
+						className="px-3 py-1.5 text-xs font-semibold rounded-full border border-primary/20 text-primary bg-primary/5 hover:bg-primary/10 transition-all active:scale-95"
+					>
+						{qs.label}
+					</button>
+				))}
+			</div>
+			<div className="flex items-center gap-2">
+				<Input
+					type="number"
+					min="1"
+					value={customAmount}
+					onChange={(e) => setCustomAmount(e.target.value)}
+					className="w-20 h-11 text-center font-semibold rounded-xl shadow-sm"
+				/>
+				<Select value={customUnit} onValueChange={setCustomUnit}>
+					<SelectTrigger className="w-28 h-11 rounded-xl font-medium shadow-sm bg-background/50">
+						<SelectValue />
+					</SelectTrigger>
+					<SelectContent>
+						<SelectItem value="hours">Jam</SelectItem>
+						<SelectItem value="days">Hari</SelectItem>
+					</SelectContent>
+				</Select>
+				<Button
+					type="button"
+					variant="secondary"
+					onClick={() => setEst(Number(customAmount), customUnit)}
+					className="h-11 px-4 font-semibold rounded-xl shadow-sm flex-1"
+				>
+					Isi Target
+				</Button>
+			</div>
+			<div className="flex items-center gap-3 p-3.5 bg-muted/30 rounded-xl border border-border">
+				<Clock className="h-5 w-5 text-primary shrink-0" />
+				<span className="text-sm font-medium text-foreground">
+					{displayDate}
+				</span>
+			</div>
+		</div>
 	);
 }
 
@@ -244,6 +289,7 @@ function OrdersPage() {
 	const [notes, setNotes] = useState("");
 	const [estimatedCompletion, setEstimatedCompletion] = useState("");
 	const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+	const [formShaking, setFormShaking] = useState(false);
 
 	// Edit form state
 	const [editItems, setEditItems] = useState<OrderItem[]>([]);
@@ -259,10 +305,20 @@ function OrdersPage() {
 	const [editFormErrors, setEditFormErrors] = useState<Record<string, string>>(
 		{},
 	);
+	const [editFormShaking, setEditFormShaking] = useState(false);
 	const [isPrinting, setIsPrinting] = useState(false);
 	const receiptRef = useRef<HTMLDivElement>(null);
 
-	const [orderDetail, setOrderDetail] = useState<{ items?: { id: number; serviceId?: number | null; serviceName: string; quantity: number; unitPrice: number; subtotal: number }[] } | null>(null);
+	const [orderDetail, setOrderDetail] = useState<{
+		items?: {
+			id: number;
+			serviceId?: number | null;
+			serviceName: string;
+			quantity: number;
+			unitPrice: number;
+			subtotal: number;
+		}[];
+	} | null>(null);
 	const [loadingDetail, setLoadingDetail] = useState(false);
 
 	const lastViewedParamRef = useRef<number | null>(null);
@@ -297,9 +353,11 @@ function OrdersPage() {
 			queryClient.invalidateQueries(analyticsSummaryQueryOptions);
 			resetCreateForm();
 			setShowCreateForm(false);
+			haptic("success");
 			toast.success("Pesanan berhasil dibuat!");
 		},
 		onError: () => {
+			haptic("error");
 			toast.error("Gagal membuat pesanan. Coba lagi.");
 		},
 	});
@@ -319,6 +377,7 @@ function OrdersPage() {
 			});
 		},
 		onError: () => {
+			haptic("error");
 			toast.error("Gagal menambah pelanggan. Coba lagi.");
 		},
 	});
@@ -334,9 +393,11 @@ function OrdersPage() {
 			queryClient.invalidateQueries(analyticsSummaryQueryOptions);
 			setSelectedOrder(null);
 			setOrderDetail(null);
+			haptic("success");
 			toast.success("Pesanan diperbarui");
 		},
 		onError: () => {
+			haptic("error");
 			toast.error("Gagal memperbarui pesanan. Coba lagi.");
 		},
 	});
@@ -349,9 +410,11 @@ function OrdersPage() {
 			setSelectedOrder(null);
 			setOrderDetail(null);
 			setShowEditForm(false);
+			haptic("success");
 			toast.success("Pesanan berhasil dihapus");
 		},
 		onError: () => {
+			haptic("error");
 			toast.error("Gagal menghapus pesanan. Coba lagi.");
 		},
 	});
@@ -371,9 +434,11 @@ function OrdersPage() {
 			setShowEditForm(false);
 			setSelectedOrder(null);
 			setOrderDetail(null);
+			haptic("success");
 			toast.success("Pesanan berhasil diperbarui");
 		},
 		onError: () => {
+			haptic("error");
 			toast.error("Gagal memperbarui pesanan. Coba lagi.");
 		},
 	});
@@ -477,6 +542,12 @@ function OrdersPage() {
 			}
 		}
 		setFormErrors(errors);
+		if (Object.keys(errors).length > 0) {
+			setFormShaking(true);
+			haptic("error");
+			setTimeout(() => setFormShaking(false), 500);
+			return;
+		}
 		if (Object.keys(errors).length > 0) return;
 
 		if (customerMode === "existing") {
@@ -501,6 +572,12 @@ function OrdersPage() {
 			errors.items = "Tambahkan minimal 1 item layanan";
 		}
 		setEditFormErrors(errors);
+		if (Object.keys(errors).length > 0) {
+			setEditFormShaking(true);
+			haptic("error");
+			setTimeout(() => setEditFormShaking(false), 500);
+			return;
+		}
 		if (Object.keys(errors).length > 0) return;
 
 		if (!selectedOrder) return;
@@ -754,33 +831,44 @@ function OrdersPage() {
 									<div className="flex items-center justify-between px-2">
 										{STATUS_STEPS.map((status, idx) => {
 											const cfg = STATUS_CONFIG[status];
-											const isActive =
-												STATUS_STEPS.indexOf(
-													selectedOrder.status as OrderStatus,
-												) >= idx;
+											const currentIdx = STATUS_STEPS.indexOf(
+												selectedOrder.status as OrderStatus,
+											);
+											const isActive = currentIdx >= idx;
+											const isCompleted = currentIdx > idx;
 											const Icon = cfg.icon;
 											return (
 												<div key={status} className="flex items-center gap-2">
-													<div
-														className={[
-															"flex items-center justify-center h-9 w-9 rounded-full border-2 transition-all",
-															isActive
-																? "bg-primary border-primary text-primary-foreground"
-																: "bg-background border-border text-muted-foreground",
-														].join(" ")}
+													<motion.div
+														animate={{
+															backgroundColor: isActive
+																? "var(--primary)"
+																: "var(--background)",
+															borderColor: isActive
+																? "var(--primary)"
+																: "var(--border)",
+															scale: isActive ? 1.05 : 1,
+														}}
+														transition={{
+															type: "spring",
+															stiffness: 300,
+															damping: 25,
+														}}
+														className="flex items-center justify-center h-9 w-9 rounded-full border-2"
 													>
 														<Icon className="h-4 w-4" />
-													</div>
+													</motion.div>
 													{idx < STATUS_STEPS.length - 1 && (
-														<div
-															className={[
-																"w-8 h-0.5 rounded-full",
-																STATUS_STEPS.indexOf(
-																	selectedOrder.status as OrderStatus,
-																) > idx
-																	? "bg-primary"
-																	: "bg-border",
-															].join(" ")}
+														<motion.div
+															initial={{ scaleX: 0 }}
+															animate={{
+																backgroundColor: isCompleted
+																	? "var(--primary)"
+																	: "var(--border)",
+																scaleX: isCompleted ? 1 : 0,
+															}}
+															transition={{ duration: 0.4, delay: idx * 0.1 }}
+															className="w-8 h-0.5 rounded-full origin-left"
 														/>
 													)}
 												</div>
@@ -1033,10 +1121,15 @@ function OrdersPage() {
 				</DrawerContent>
 			</Drawer>
 
-			<Dialog open={!!shareOrderId} onOpenChange={(v) => !v && setShareOrderId(null)}>
+			<Dialog
+				open={!!shareOrderId}
+				onOpenChange={(v) => !v && setShareOrderId(null)}
+			>
 				<DialogContent className="max-w-xs rounded-2xl w-11/12 mx-auto">
 					<DialogHeader>
-						<DialogTitle className="text-center font-bold">Pindai Resi</DialogTitle>
+						<DialogTitle className="text-center font-bold">
+							Pindai Resi
+						</DialogTitle>
 						<DialogDescription className="text-center text-xs">
 							Lacak status pesanan #{shareOrderId?.toString().padStart(4, "0")}
 						</DialogDescription>
@@ -1059,7 +1152,9 @@ function OrdersPage() {
 								className="flex-1 h-11 rounded-xl text-sm font-bold gap-2"
 								onClick={() => {
 									if (shareOrderId) {
-										navigator.clipboard.writeText(`${window.location.origin}/track/${shareOrderId}`);
+										navigator.clipboard.writeText(
+											`${window.location.origin}/track/${shareOrderId}`,
+										);
 										toast.success("Tautan resi berhasil disalin!");
 									}
 								}}
@@ -1088,7 +1183,12 @@ function OrdersPage() {
 					</DrawerHeader>
 
 					<div className="overflow-y-auto px-4 pb-4 w-full shrink">
-						<div className="space-y-4 pb-4">
+						<div
+							className={[
+								"space-y-4 pb-4",
+								formShaking ? "animate-shake" : "",
+							].join(" ")}
+						>
 							{/* Customer Selection */}
 							<div className="space-y-2">
 								<Label className="text-sm font-semibold">Pelanggan</Label>
@@ -1270,7 +1370,7 @@ function OrdersPage() {
 													<button
 														type="button"
 														onClick={() => removeFormItem(idx)}
-														className="h-6 w-6 rounded-md flex items-center justify-center hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
+														className="h-9 w-9 rounded-lg flex items-center justify-center hover:bg-destructive/10 active:bg-destructive/20 text-muted-foreground hover:text-destructive transition-colors touch-press"
 													>
 														<X className="h-3.5 w-3.5" />
 													</button>
@@ -1333,7 +1433,10 @@ function OrdersPage() {
 								<Label className="text-sm font-semibold">
 									Estimasi Selesai (Otomatis & Manual)
 								</Label>
-								<EstCompletionInput value={estimatedCompletion} onChange={setEstimatedCompletion} />
+								<EstCompletionInput
+									value={estimatedCompletion}
+									onChange={setEstimatedCompletion}
+								/>
 							</div>
 
 							{/* Submit */}
@@ -1377,7 +1480,12 @@ function OrdersPage() {
 					</DrawerHeader>
 
 					<div className="overflow-y-auto px-4 pb-4 w-full shrink">
-						<div className="space-y-4 pb-4">
+						<div
+							className={[
+								"space-y-4 pb-4",
+								editFormShaking ? "animate-shake" : "",
+							].join(" ")}
+						>
 							{/* Edit Items */}
 							<div className="space-y-2">
 								<Label className="text-sm font-semibold">Item Layanan</Label>
@@ -1461,7 +1569,7 @@ function OrdersPage() {
 													<button
 														type="button"
 														onClick={() => removeEditItem(idx)}
-														className="h-6 w-6 rounded-md flex items-center justify-center hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
+														className="h-9 w-9 rounded-lg flex items-center justify-center hover:bg-destructive/10 active:bg-destructive/20 text-muted-foreground hover:text-destructive transition-colors touch-press"
 													>
 														<X className="h-3.5 w-3.5" />
 													</button>
@@ -1548,7 +1656,10 @@ function OrdersPage() {
 								<Label className="text-sm font-semibold">
 									Estimasi Selesai (Otomatis & Manual)
 								</Label>
-								<EstCompletionInput value={editEstimatedCompletion} onChange={setEditEstimatedCompletion} />
+								<EstCompletionInput
+									value={editEstimatedCompletion}
+									onChange={setEditEstimatedCompletion}
+								/>
 							</div>
 
 							{/* Submit */}
@@ -1571,7 +1682,11 @@ function OrdersPage() {
 			</Drawer>
 
 			{/* Hidden Receipt Template for PDF Generation */}
-			<div className="absolute opacity-0 pointer-events-none -z-50" aria-hidden="true" ref={receiptRef}>
+			<div
+				className="absolute opacity-0 pointer-events-none -z-50"
+				aria-hidden="true"
+				ref={receiptRef}
+			>
 				{selectedOrder && orderDetail && settings && (
 					<ReceiptTemplate
 						order={{

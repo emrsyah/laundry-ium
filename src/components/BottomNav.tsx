@@ -1,6 +1,7 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { BarChart3, ClipboardList, Home, Settings, Users } from "lucide-react";
 import { motion } from "framer-motion";
+import { BarChart3, ClipboardList, Home, Settings, Users } from "lucide-react";
+import { haptic } from "#/lib/haptic";
 
 const navItems = [
 	{ name: "Beranda", icon: Home, path: "/" },
@@ -30,17 +31,28 @@ export function BottomNav() {
 						<Link
 							key={item.path}
 							to={item.path}
+							onClick={() => haptic("light")}
 							className={[
-								"flex flex-col items-center justify-center flex-1 h-full transition-colors",
+								"relative flex flex-col items-center justify-center flex-1 h-full transition-colors touch-press",
 								isActive
 									? "text-primary"
 									: "text-muted-foreground hover:text-foreground/80",
 							].join(" ")}
 						>
-							<motion.div whileTap={{ scale: 0.88 }} className="flex flex-col items-center justify-center h-full w-full gap-0.5">
+							{isActive && (
+								<motion.div
+									layoutId="nav-active-indicator"
+									className="absolute top-0 left-3 right-3 h-0.5 rounded-full bg-primary"
+									transition={{ type: "spring", stiffness: 400, damping: 30 }}
+								/>
+							)}
+							<motion.div
+								whileTap={{ scale: 0.93 }}
+								className="flex flex-col items-center justify-center h-full w-full gap-0.5"
+							>
 								<div
 									className={[
-										"flex items-center justify-center rounded-xl transition-all",
+										"flex items-center justify-center rounded-xl transition-all duration-200",
 										isActive ? "h-9 w-9 bg-primary/10" : "h-9 w-9",
 									].join(" ")}
 								>

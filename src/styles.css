@@ -193,3 +193,45 @@ a {
     scrollbar-width: none;
   }
 }
+
+/* ===== Animation Utilities ===== */
+
+@keyframes shake {
+	0%, 100% { transform: translateX(0); }
+	10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+	20%, 40%, 60%, 80% { transform: translateX(4px); }
+}
+.animate-shake {
+	animation: shake 0.5s ease-in-out;
+}
+
+@keyframes success-pulse {
+	0% { transform: scale(1); }
+	50% { transform: scale(1.02); }
+	100% { transform: scale(1); }
+}
+.animate-success-pulse {
+	animation: success-pulse 0.4s ease-out;
+}
+
+@keyframes fade-in-up {
+	from { opacity: 0; transform: translateY(12px); }
+	to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in-up {
+	animation: fade-in-up 0.4s ease-out both;
+}
+
+/* Touch press — removes default highlight on mobile */
+.touch-press {
+	-webkit-tap-highlight-color: transparent;
+	touch-action: manipulation;
+}
+
+/* Input focus lift — subtle shadow on focus for form inputs */
+@layer base {
+	input:focus:not(:focus-visible), textarea:focus:not(:focus-visible), select:focus:not(:focus-visible) {
+		outline: none;
+	}
+}
+
