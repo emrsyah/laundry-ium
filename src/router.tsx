@@ -19,6 +19,8 @@ export function getRouter() {
     scrollRestoration: true,
     defaultPreload: 'intent',
     defaultPreloadStaleTime: 0,
+    defaultPendingMs: 0,
+    defaultPendingMinMs: 300,
     defaultPendingComponent: () => (
       <div className="px-4 py-8 space-y-4 w-full max-w-md mx-auto">
         <div className="flex items-center justify-between mb-4 mt-2">
