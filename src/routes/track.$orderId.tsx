@@ -8,12 +8,11 @@ import {
 	PackageSearch,
 	Receipt,
 } from "lucide-react";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { generateReceiptPDF } from "#/lib/pdf-utils";
 import { ordersGet, settingsGet } from "#/lib/server-fns";
 import { formatDate, formatRupiah } from "#/lib/utils";
-import { ReceiptTemplate } from "../components/ReceiptTemplate";
 import { Skeleton } from "../components/ui/skeleton";
 
 export const Route = createFileRoute("/track/$orderId")({
@@ -87,13 +86,24 @@ function OrderTrackingPage() {
 	const { data: order } = useSuspenseQuery(trackOrderQueryOptions(id));
 	const { data: settings } = useSuspenseQuery(settingsQueryOptions);
 	const [isPrinting, setIsPrinting] = useState(false);
-	const receiptRef = useRef<HTMLDivElement>(null);
 
 	const handlePrint = async () => {
 		setIsPrinting(true);
 		const tid = toast.loading("Menyiapkan struk...");
 		try {
-			await generateReceiptPDF(id, receiptRef.current);
+			await generateReceiptPDF(id, null, {
+				order: {
+					...order,
+					items: order.items.map((i) => ({
+						...i,
+						subtotal: Number(i.subtotal),
+					})),
+				},
+				settings: {
+					name: settings.name ?? "LaundryKu",
+					address: settings.address ?? "",
+				},
+			});
 			toast.success("Struk berhasil diunduh", { id: tid });
 		} catch (err) {
 			console.error("Print error:", err);
@@ -256,28 +266,6 @@ function OrderTrackingPage() {
 				</p>
 			</div>
 
-			{/* Hidden Receipt Template for PDF Generation */}
-			<div
-				className="absolute opacity-0 pointer-events-none -z-50"
-				aria-hidden="true"
-				ref={receiptRef}
-			>
-				{order && settings && (
-					<ReceiptTemplate
-						order={{
-							...order,
-							items: order.items.map((i) => ({
-								...i,
-								subtotal: Number(i.subtotal),
-							})),
-						}}
-						settings={{
-							name: settings.name ?? "LaundryKu",
-							address: settings.address ?? "",
-						}}
-					/>
-				)}
-			</div>
 		</div>
 	);
 }

@@ -42,7 +42,6 @@ import {
 	settingsGet,
 } from "#/lib/server-fns";
 import { formatDate, formatRupiah } from "#/lib/utils";
-import { ReceiptTemplate } from "../components/ReceiptTemplate";
 import { Button } from "../components/ui/button";
 import {
 	Dialog,
@@ -307,7 +306,6 @@ function OrdersPage() {
 	);
 	const [editFormShaking, setEditFormShaking] = useState(false);
 	const [isPrinting, setIsPrinting] = useState(false);
-	const receiptRef = useRef<HTMLDivElement>(null);
 
 	const [orderDetail, setOrderDetail] = useState<{
 		items?: {
@@ -643,7 +641,19 @@ function OrdersPage() {
 		setIsPrinting(true);
 		const tid = toast.loading("Menyiapkan struk...");
 		try {
-			await generateReceiptPDF(selectedOrder.id, receiptRef.current);
+			await generateReceiptPDF(selectedOrder.id, null, {
+				order: {
+					...selectedOrder,
+					items: (orderDetail?.items || []).map((i) => ({
+						...i,
+						subtotal: Number(i.subtotal),
+					})),
+				},
+				settings: {
+					name: settings.name ?? "LaundryKu",
+					address: settings.address ?? "",
+				},
+			});
 			toast.success("Struk berhasil diunduh", { id: tid });
 		} catch (err) {
 			console.error("Print error:", err);
@@ -1681,28 +1691,6 @@ function OrdersPage() {
 				</DrawerContent>
 			</Drawer>
 
-			{/* Hidden Receipt Template for PDF Generation */}
-			<div
-				className="absolute opacity-0 pointer-events-none -z-50"
-				aria-hidden="true"
-				ref={receiptRef}
-			>
-				{selectedOrder && orderDetail && settings && (
-					<ReceiptTemplate
-						order={{
-							...selectedOrder,
-							items: (orderDetail.items || []).map((i) => ({
-								...i,
-								subtotal: Number(i.subtotal),
-							})),
-						}}
-						settings={{
-							name: settings.name ?? "LaundryKu",
-							address: settings.address ?? "",
-						}}
-					/>
-				)}
-			</div>
 		</div>
 	);
 }

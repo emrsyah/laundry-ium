@@ -67,6 +67,12 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 	}),
 	shellComponent: RootDocument,
 	component: RootComponent,
+	notFoundComponent: () => (
+		<div className="min-h-screen flex flex-col items-center justify-center p-6 bg-slate-50 dark:bg-slate-950 text-center">
+			<h2 className="text-xl font-bold mb-2 text-foreground">Halaman Tidak Ditemukan</h2>
+			<p className="text-muted-foreground">Halaman yang Anda cari tidak ada.</p>
+		</div>
+	),
 });
 
 function PageFallback() {
@@ -156,14 +162,14 @@ function RootComponent() {
 	return (
 		<Suspense fallback={<PageFallback />}>
 			<div className="relative h-full w-full">
-				<AnimatePresence mode="popLayout" initial={false} custom={direction}>
+				<AnimatePresence mode="wait" initial={false} custom={direction}>
 					<motion.div
 						key={location.pathname}
 						custom={direction}
-						initial={{ opacity: 0, x: direction * 50 }}
-						animate={{ opacity: 1, x: 0 }}
-						exit={{ opacity: 0, x: direction * -50 }}
-						transition={{ type: "spring", damping: 25, stiffness: 200 }}
+						initial={{ opacity: 0, y: 8 }}
+						animate={{ opacity: 1, y: 0 }}
+						exit={{ opacity: 0 }}
+						transition={{ duration: 0.15, ease: "easeOut" }}
 						drag={isMainTab ? "x" : false}
 						dragConstraints={{ left: 0, right: 0 }}
 						dragElastic={0.2}
